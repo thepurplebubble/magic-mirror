@@ -29,9 +29,6 @@ function flatten(obj: any, prefix: string = "") {
 
 const templates = flatten(templatesRaw);
 
-const pfpFile = fs.readFileSync("./src/lib/arcadius.yaml", "utf8");
-export const pfps = parse(pfpFile);
-
 export function t(template: template, data: data) {
   //    return (randomChoice(templates[template]) as string).replace(/\${(.*?)}/g, (_, key) => (data as any)[key])
   return t_format(t_fetch(template), data);
