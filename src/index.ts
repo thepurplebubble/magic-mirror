@@ -1,13 +1,14 @@
-import * as dotenv from "dotenv";
+import dotenv from "dotenv";
 dotenv.config();
 
+import { PrismaClient } from "@prisma/client";
 import { App, ExpressReceiver } from "@slack/bolt";
 import axios from "axios";
 import colors from "colors";
+import { CronJob } from "cron";
 import express from "express";
 import responseTime from "response-time";
 
-import { CronJob } from "cron";
 import { indexEndpoint } from "./endpoints";
 import { healthEndpoint } from "./endpoints/health";
 import { t } from "./lib/templates";
@@ -24,6 +25,8 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET!,
   receiver,
 });
+
+const prisma = new PrismaClient();
 
 app.event(/.*/, async ({ event, client }) => {
   try {
