@@ -1,0 +1,9 @@
+tunnels:
+  pbreciver:
+    proto: http
+    addr: 3000
+    # domain: heron-selected-literally.ngrok-free.app
+  hcreciver:
+    proto: http
+    addr: 3001
+    # domain: demo.inconshreveable.com

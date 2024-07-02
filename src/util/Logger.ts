@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { client } from "../index";
+import { PBclient } from "../index";
 
 import async from "async";
 import Bottleneck from "bottleneck";
@@ -14,7 +14,7 @@ const limiter = new Bottleneck({
 
 const messageQueue = async.queue(async (task, callback) => {
   try {
-    await limiter.schedule(() => client.chat.postMessage(task));
+    await limiter.schedule(() => PBclient.chat.postMessage(task));
     callback();
   } catch (error) {
     console.error("Error posting message:", error);

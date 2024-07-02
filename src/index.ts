@@ -9,40 +9,64 @@ import express from "express";
 import { indexEndpoint } from "./endpoints";
 import { healthEndpoint } from "./endpoints/health";
 import { mirror } from "./functions/mirror";
-import { t } from "./lib/templates";
 import { slog } from "./util/Logger";
 
 const prisma = new PrismaClient();
 
-const receiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET!,
+const PBreceiver = new ExpressReceiver({
+  signingSecret: process.env.PB_SLACK_SIGNING_SECRET!,
 });
 
-const app = new App({
-  token: process.env.SLACK_BOT_TOKEN!,
-  appToken: process.env.SLACK_APP_TOKEN!,
-  signingSecret: process.env.SLACK_SIGNING_SECRET!,
-  receiver,
+const HCreceiver = new ExpressReceiver({
+  signingSecret: process.env.HC_SLACK_SIGNING_SECRET!,
 });
 
-app.message(async ({ message, say }) => {
-  await mirror(app.client, message);
+const PBapp = new App({
+  token: process.env.PB_SLACK_BOT_TOKEN!,
+  appToken: process.env.PB_SLACK_APP_TOKEN!,
+  signingSecret: process.env.PB_SLACK_SIGNING_SECRET!,
+  receiver: PBreceiver,
 });
 
-receiver.router.use(express.json());
-receiver.router.get("/", indexEndpoint);
-receiver.router.get("/ping", healthEndpoint);
-receiver.router.get("/up", healthEndpoint);
+const HCapp = new App({
+  token: process.env.HC_SLACK_BOT_TOKEN!,
+  appToken: process.env.HC_SLACK_APP_TOKEN!,
+  signingSecret: process.env.HC_SLACK_SIGNING_SECRET!,
+  receiver: HCreceiver,
+});
 
-const logStartup = async (app: App) => {
-  let env = process.env.NODE_ENV;
-  slog(t("app.startup", { environment: env }), "info");
-};
+const PBclient: any = PBapp.client;
+const HCclient: any = HCapp.client;
 
-app.start(process.env.PORT || 3000).then(async () => {
-  await logStartup(app);
+PBapp.message(async ({ message, say }) => {
+  await mirror(PBclient, HCclient, message);
+});
+
+HCapp.message(async ({ message, say }) => {
+  await mirror(PBclient, HCclient, message);
+});
+
+PBreceiver.router.use(express.json());
+PBreceiver.router.get("/", indexEndpoint);
+PBreceiver.router.get("/ping", healthEndpoint);
+PBreceiver.router.get("/up", healthEndpoint);
+
+HCreceiver.router.use(express.json());
+HCreceiver.router.get("/", indexEndpoint);
+HCreceiver.router.get("/ping", healthEndpoint);
+HCreceiver.router.get("/up", healthEndpoint);
+
+PBapp.start(3000).then(async () => {
+  await slog("PB Bolt app is running", "startup");
   console.log(
-    colors.bgCyan(`⚡️ Bolt app is running in env ${process.env.NODE_ENV}`)
+    colors.bgCyan(`⚡️ PB Bolt app is running in env ${process.env.NODE_ENV}`)
+  );
+});
+
+HCapp.start(3001).then(async () => {
+  await slog("HC Bolt app is running", "startup");
+  console.log(
+    colors.bgCyan(`⚡️ HC Bolt app is running in env ${process.env.NODE_ENV}`)
   );
 });
 
@@ -57,5 +81,4 @@ app.start(process.env.PORT || 3000).then(async () => {
 //   "America/New_York"
 // );
 
-const client: any = app.client;
-export { app, client, prisma };
+export { HCapp, HCclient, PBapp, PBclient, prisma };
