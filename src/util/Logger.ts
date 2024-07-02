@@ -1,26 +1,28 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { client } from "../index";
-
 import async from "async";
 import Bottleneck from "bottleneck";
 import colors from "colors";
 import { ChatPostMessageRequest } from "slack-edge";
+import { client } from "../index";
 
 // Create a rate limiter with Bottleneck
 const limiter = new Bottleneck({
   minTime: 1000, // 1 second between each request
 });
 
-const messageQueue = async.queue(async (task: ChatPostMessageRequest, callback) => {
-  try {
-    await limiter.schedule(() => client.chat.postMessage(task));
-    callback();
-  } catch (error) {
-    console.error("Error posting message:", error);
+const messageQueue = async.queue(
+  async (task: ChatPostMessageRequest, callback: (error?: Error) => void) => {
+    try {
+      await limiter.schedule(() => client.chat.postMessage(task));
+      callback(); // Indicate that the task is complete
+    } catch (error: any) {
+      console.error("Error posting message:", error);
+      callback(error); // Pass the error to the callback
+    }
   }
-}, 1); // Only one worker to ensure order and rate limit
+);
 
 async function slog(logMessage, type) {
   const message: ChatPostMessageRequest = {
@@ -33,7 +35,7 @@ async function slog(logMessage, type) {
           type: "mrkdwn",
           text: logMessage
             .split("\n")
-            .map((a) => `> ${a}`)
+            .map((a) => `${a}`)
             .join("\n"),
         },
       },
@@ -48,6 +50,35 @@ async function slog(logMessage, type) {
       },
     ],
   };
+
+  // Add a colored border to the message based on the type
+  switch (type) {
+    case "info":
+      // @ts-expect-error
+      message.blocks![0].text.text = `> ${
+        // @ts-expect-error
+        message.blocks![0].text.text
+      }`;
+      break;
+    case "start":
+      // @ts-expect-error
+      message.blocks![0].text.text = `> :rocket: ${
+        // @ts-expect-error
+        message.blocks![0].text.text
+      }`;
+      break;
+    case "cron":
+      // @ts-expect-error
+      message.blocks![0].text.text = `> :alarm_clock: ${
+        // @ts-expect-error
+        message.blocks![0].text.text
+      }`;
+      break;
+    case "error":
+      // @ts-expect-error
+      message.blocks![0].text.text = `> :x: ${message.blocks![0].text.text}`;
+      break;
+  }
 
   messageQueue.push(message, (error) => {
     if (error) {
@@ -72,7 +103,7 @@ export const clog = async (logMessage, type: LogType) => {
     case "error":
       console.error(
         colors.red.bold(
-          `Yo <@S0790GPRA48> deres an error \n\n [ERROR]: ${logMessage}`
+          `Yo <@U079DHX7FB6> deres an error \n\n [ERROR]: ${logMessage}`
         )
       );
       break;
