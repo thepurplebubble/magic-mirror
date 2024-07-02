@@ -8,8 +8,8 @@ let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
 
 const channels = [
-  // hcChannel_pbip,
-  // hcChannel_purplebubble,
+  hcChannel_pbip,
+  hcChannel_purplebubble,
   pbChannel_pb,
   pbChannel_pbpb,
 ];
