@@ -7,14 +7,21 @@ features:
 oauth_config:
   scopes:
     bot:
+      - app_mentions:read
       - channels:history
       - channels:join
-      - app_mentions:read
       - channels:read
       - chat:write
       - chat:write.customize
       - chat:write.public
+      - groups:history
+      - users.profile:read
 settings:
+  event_subscriptions:
+    request_url: https://0ab4-65-19-76-238.ngrok-free.app/slack/events
+    bot_events:
+      - message.channels
+      - message.groups
   org_deploy_enabled: true
   socket_mode_enabled: false
   token_rotation_enabled: false
