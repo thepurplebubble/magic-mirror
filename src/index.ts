@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { PrismaClient } from "@prisma/client";
+// import { PrismaClient } from "@prisma/client";
 import { App, ExpressReceiver } from "@slack/bolt";
 import colors from "colors";
 import express from "express";
@@ -11,7 +11,7 @@ import { healthEndpoint } from "./endpoints/health";
 import { mirror } from "./functions/mirror";
 import { slog } from "./util/Logger";
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
 const PBreceiver = new ExpressReceiver({
   signingSecret: process.env.PB_SLACK_SIGNING_SECRET!,
@@ -81,4 +81,4 @@ HCapp.start(4001).then(async () => {
 //   "America/New_York"
 // );
 
-export { HCapp, HCclient, PBapp, PBclient, prisma };
+export { HCapp, HCclient, PBapp, PBclient };
