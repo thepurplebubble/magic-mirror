@@ -56,14 +56,14 @@ HCreceiver.router.get("/", indexEndpoint);
 HCreceiver.router.get("/ping", healthEndpoint);
 HCreceiver.router.get("/up", healthEndpoint);
 
-PBapp.start(3000).then(async () => {
+PBapp.start(4000).then(async () => {
   await slog("PB Bolt app is running", "startup");
   console.log(
     colors.bgCyan(`⚡️ PB Bolt app is running in env ${process.env.NODE_ENV}`)
   );
 });
 
-HCapp.start(3001).then(async () => {
+HCapp.start(4001).then(async () => {
   await slog("HC Bolt app is running", "startup");
   console.log(
     colors.bgCyan(`⚡️ HC Bolt app is running in env ${process.env.NODE_ENV}`)
