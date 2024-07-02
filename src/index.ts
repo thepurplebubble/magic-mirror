@@ -1,37 +1,61 @@
-import { Elysia } from "elysia";
-import { SlackAPIClient, SlackApp } from "slack-edge";
-import { t } from "./lib/templates";
+import * as dotenv from "dotenv";
+dotenv.config();
+
+import { PrismaClient } from "@prisma/client";
+import { App, ExpressReceiver } from "@slack/bolt";
+import colors from "colors";
+import express from "express";
 
 import { indexEndpoint } from "./endpoints";
 import { healthEndpoint } from "./endpoints/health";
-import { blog } from "./util/Logger";
+import { mirror } from "./functions/mirror";
+import { t } from "./lib/templates";
+import { slog } from "./util/Logger";
 
-const app = new SlackApp({
-  env: {
-    SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN!,
-    SLACK_SIGNING_SECRET: process.env.SLACK_SIGNING_SECRET!,
-    SLACK_APP_TOKEN: process.env.SLACK_APP_TOKEN!,
-    SLACK_LOGGING_LEVEL: "INFO",
-  },
-  startLazyListenerAfterAck: true,
+const prisma = new PrismaClient();
+
+const receiver = new ExpressReceiver({
+  signingSecret: process.env.SLACK_SIGNING_SECRET!,
 });
 
-const elysia = new Elysia()
-  .get("/", indexEndpoint)
-  .get("/ping", healthEndpoint)
-  .get("/up", healthEndpoint)
-  .listen(process.env.ELYSIA_PORT || 3001);
+const app = new App({
+  token: process.env.SLACK_BOT_TOKEN!,
+  appToken: process.env.SLACK_APP_TOKEN!,
+  signingSecret: process.env.SLACK_SIGNING_SECRET!,
+  receiver,
+});
 
-export default {
-  port: process.env.SLACK_PORT || 3000,
-  async fetch(request: Request) {
-    return await app.run(request);
-  },
+app.message(async ({ message, say }) => {
+  await mirror(app.client, message);
+});
+
+receiver.router.use(express.json());
+receiver.router.get("/", indexEndpoint);
+receiver.router.get("/ping", healthEndpoint);
+receiver.router.get("/up", healthEndpoint);
+
+const logStartup = async (app: App) => {
+  let env = process.env.NODE_ENV;
+  slog(t("app.startup", { environment: env }), "info");
 };
 
-let env = process.env.NODE_ENV;
-// slog(t("app.startup", { environment: env }), "info");
-blog(t("app.startup", { environment: env }), "start");
+app.start(process.env.PORT || 3000).then(async () => {
+  await logStartup(app);
+  console.log(
+    colors.bgCyan(`⚡️ Bolt app is running in env ${process.env.NODE_ENV}`)
+  );
+});
 
-const client: SlackAPIClient = app.client;
-export { app, client };
+// Heartbeat
+// new CronJob(
+//   "0 * * * * *",
+//   async function () {
+//     metrics.increment("heartbeat");
+//   },
+//   null,
+//   true,
+//   "America/New_York"
+// );
+
+const client: any = app.client;
+export { app, client, prisma };
