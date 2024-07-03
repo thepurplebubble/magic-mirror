@@ -4,7 +4,7 @@ services:
     ports:
       - 4221:3000
     image: ghcr.io/thepurplebubble/magic-mirror:latest
-    restart: bun
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - SLACK_LOG_CHANNEL=C07ALMZQK8T
