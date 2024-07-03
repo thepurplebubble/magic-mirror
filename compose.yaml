@@ -3,7 +3,7 @@ services:
   server:
     ports:
       - 4221:3000
-    image: thepurplebubble/magic-mirror:latest
+    image: ghcr.io/thepurplebubble/magic-mirror:latest
     restart: bun
     environment:
       - NODE_ENV=production

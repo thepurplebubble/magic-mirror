@@ -5,7 +5,7 @@ on:
     types: [created]
 
 env:
-  IMAGE_NAME: thepurplebubble/magic-mirror
+  IMAGE_NAME: magic-mirror
 
 jobs:
   push:
