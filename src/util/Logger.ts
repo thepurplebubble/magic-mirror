@@ -1,6 +1,3 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
 import { PBclient } from "../index";
 
 import async from "async";
@@ -46,35 +43,6 @@ async function slog(logMessage, type) {
       },
     ],
   };
-
-  // Add a colored border to the message based on the type
-  // switch (type) {
-  //   case "info":
-  //     // @ts-expect-error
-  //     message.blocks![0].text.text = `> ${
-  //       // @ts-expect-error
-  //       message.blocks![0].text.text
-  //     }`;
-  //     break;
-  //   case "start":
-  //     // @ts-expect-error
-  //     message.blocks![0].text.text = `> :rocket: ${
-  //       // @ts-expect-error
-  //       message.blocks![0].text.text
-  //     }`;
-  //     break;
-  //   case "cron":
-  //     // @ts-expect-error
-  //     message.blocks![0].text.text = `> :alarm_clock: ${
-  //       // @ts-expect-error
-  //       message.blocks![0].text.text
-  //     }`;
-  //     break;
-  //   case "error":
-  //     // @ts-expect-error
-  //     message.blocks![0].text.text = `> :x: ${message.blocks![0].text.text}`;
-  //     break;
-  // }
 
   messageQueue.push(message, (error) => {
     if (error) {
