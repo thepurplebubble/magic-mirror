@@ -25,6 +25,15 @@ const channels = [
   pbChannel_pbpb,
 ];
 
+const channelMap = {
+  [pbChannel_pb]: hcChannel_purplebubble,
+  [pbChannel_pbpb]: hcChannel_pbip,
+  [pbmirrorTest]: hcmirrorTest,
+  [hcmirrorTest]: pbmirrorTest,
+  [hcChannel_purplebubble]: pbChannel_pb,
+  [hcChannel_pbip]: pbChannel_pbpb,
+};
+
 let team;
 
 export async function mirror(
@@ -63,129 +72,43 @@ export async function mirror(
 
     let messageTeam = message.team!;
     let messageChannel = message.channel!;
+    let userProfile;
 
     if (messageTeam === pbTeam) {
-      let userProfile = await pbClient.users.profile.get({
+      userProfile = await pbClient.users.profile.get({
         user: message.user,
       });
-
-      let profile = userProfile.profile!;
-      let userpfp = profile.image_512!;
-      let userDisplayName = profile.display_name!;
-
-      switch (messageChannel) {
-        case pbmirrorTest:
-          blog(
-            `Message sent #mirrorTest (PB) => #mirrorTest (HC): ${message.text}`,
-            "info"
-          );
-
-          hcClient.chat.postMessage({
-            username: userDisplayName,
-            icon_url: userpfp,
-            channel: hcmirrorTest,
-            text: message.text,
-            blocks: message.blocks,
-          });
-
-          break;
-        case pbChannel_pbpb:
-          blog(
-            `Message sent #pb-pb (PB) => #pbip (HC): ${message.text}`,
-            "info"
-          );
-
-          hcClient.chat.postMessage({
-            username: userDisplayName,
-            icon_url: userpfp,
-            channel: hcChannel_pbip,
-            text: message.text,
-            blocks: message.blocks,
-          });
-
-          break;
-
-        case pbChannel_pb:
-          blog(
-            `Message sent #pb (PB) => #purplebubble (HC): ${message.text}`,
-            "info"
-          );
-
-          hcClient.chat.postMessage({
-            username: userDisplayName,
-            icon_url: userpfp,
-            channel: hcChannel_purplebubble,
-            text: message.text,
-            blocks: message.blocks,
-          });
-
-          break;
-
-        default:
-          return;
-      }
     } else if (messageTeam === hcTeam) {
-      let userProfile = await hcClient.users.profile.get({
+      userProfile = await hcClient.users.profile.get({
         user: message.user,
       });
+    }
 
-      let profile = userProfile.profile!;
-      let userpfp = profile.image_512!;
-      let userRealName = profile.real_name!;
+    let profile = userProfile.profile!;
+    let userpfp = profile.image_512!;
+    let userDisplayName = profile.display_name!;
 
-      switch (messageChannel) {
-        case hcmirrorTest:
-          blog(
-            `Message sent #mirrorTest (HC) => #mirrorTest (PB): ${message.text}`,
-            "info"
-          );
+    blog(
+      `Message sent <#${messageChannel}> (PB) => <#${channelMap[messageChannel]}> (HC): ${message.text}`,
+      "info"
+    );
 
-          pbClient.chat.postMessage({
-            username: userRealName,
-            icon_url: userpfp,
-            channel: pbmirrorTest,
-            text: message.text,
-            blocks: message.blocks,
-          });
-
-          break;
-        case hcChannel_purplebubble:
-          blog(
-            `Message sent #purplebubble (HC) => #pb (PB): ${message.text}`,
-            "info"
-          );
-
-          pbClient.chat.postMessage({
-            username: userRealName,
-            icon_url: userpfp,
-            channel: pbChannel_pb,
-            text: message.text,
-            blocks: message.blocks,
-          });
-
-          break;
-
-        case hcChannel_pbip:
-          blog(
-            `Message sent #pbip (HC) => #pb-pb (PB): ${message.text}`,
-            "info"
-          );
-
-          pbClient.chat.postMessage({
-            username: userRealName,
-            icon_url: userpfp,
-            channel: pbChannel_pbpb,
-            text: message.text,
-            blocks: message.blocks,
-          });
-
-          break;
-
-        default:
-          return;
-      }
-    } else {
-      return;
+    if (messageTeam === pbTeam) {
+      hcClient.chat.postMessage({
+        username: userDisplayName,
+        icon_url: userpfp,
+        channel: channelMap[messageChannel],
+        text: message.text,
+        blocks: message.blocks,
+      });
+    } else if (messageTeam === hcTeam) {
+      pbClient.chat.postMessage({
+        username: userDisplayName,
+        icon_url: userpfp,
+        channel: channelMap[messageChannel],
+        text: message.text,
+        blocks: message.blocks,
+      });
     }
   } catch (error) {
     blog(`Error responding to message: ${error}`, "error");

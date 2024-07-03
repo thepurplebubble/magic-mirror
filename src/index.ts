@@ -2,7 +2,8 @@ import { SlackAPIClient, SlackApp } from "slack-edge";
 
 import { mirror } from "./functions/mirror";
 
-const isdev = process.env.NODE_ENV === "development";
+const wantDebug = process.env.DEBUG === "true";
+wantDebug;
 const version = require("../package.json").version;
 
 console.log(
@@ -17,7 +18,7 @@ const PBapp = new SlackApp({
     SLACK_BOT_TOKEN: process.env.PB_SLACK_BOT_TOKEN!,
     SLACK_APP_TOKEN: process.env.PB_SLACK_APP_TOKEN!,
     SLACK_SIGNING_SECRET: process.env.PB_SLACK_SIGNING_SECRET!,
-    SLACK_LOGGING_LEVEL: isdev ? "DEBUG" : "INFO",
+    SLACK_LOGGING_LEVEL: wantDebug ? "DEBUG" : "INFO",
   },
 });
 
@@ -26,7 +27,7 @@ const HCapp = new SlackApp({
     SLACK_BOT_TOKEN: process.env.HC_SLACK_BOT_TOKEN!,
     SLACK_APP_TOKEN: process.env.HC_SLACK_APP_TOKEN!,
     SLACK_SIGNING_SECRET: process.env.HC_SLACK_SIGNING_SECRET!,
-    SLACK_LOGGING_LEVEL: isdev ? "DEBUG" : "INFO",
+    SLACK_LOGGING_LEVEL: wantDebug ? "DEBUG" : "INFO",
   },
 });
 
