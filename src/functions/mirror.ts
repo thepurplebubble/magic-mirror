@@ -1,3 +1,10 @@
+import {
+  BotMessageEvent,
+  FileShareMessageEvent,
+  GenericMessageEvent,
+  SlackAPIClient,
+  ThreadBroadcastMessageEvent,
+} from "slack-edge";
 import { blog } from "../util/Logger";
 
 let hcTeam = "T0266FRGM";
@@ -20,7 +27,15 @@ const channels = [
 
 let team;
 
-export async function mirror(pbClient, hcClient, message) {
+export async function mirror(
+  pbClient: SlackAPIClient,
+  hcClient: SlackAPIClient,
+  message:
+    | (GenericMessageEvent & { team?: string })
+    | (BotMessageEvent & { team?: string })
+    | (FileShareMessageEvent & { team?: string })
+    | (ThreadBroadcastMessageEvent & { team?: string })
+) {
   try {
     if (message.team === pbTeam) {
       team = "PB";
@@ -32,7 +47,9 @@ export async function mirror(pbClient, hcClient, message) {
 
     if (
       message.subtype === "bot_message" ||
+      // @ts-expect-error
       message.subtype === "channel_join" ||
+      // @ts-expect-error
       message.subtype === "channel_leave"
     ) {
       return;
@@ -54,7 +71,7 @@ export async function mirror(pbClient, hcClient, message) {
 
       let profile = userProfile.profile!;
       let userpfp = profile.image_512!;
-      let userRealName = profile.real_name!;
+      let userDisplayName = profile.display_name!;
 
       switch (messageChannel) {
         case pbmirrorTest:
@@ -64,7 +81,7 @@ export async function mirror(pbClient, hcClient, message) {
           );
 
           hcClient.chat.postMessage({
-            username: userRealName,
+            username: userDisplayName,
             icon_url: userpfp,
             channel: hcmirrorTest,
             text: message.text,
@@ -79,7 +96,7 @@ export async function mirror(pbClient, hcClient, message) {
           );
 
           hcClient.chat.postMessage({
-            username: userRealName,
+            username: userDisplayName,
             icon_url: userpfp,
             channel: hcChannel_pbip,
             text: message.text,
@@ -95,7 +112,7 @@ export async function mirror(pbClient, hcClient, message) {
           );
 
           hcClient.chat.postMessage({
-            username: userRealName,
+            username: userDisplayName,
             icon_url: userpfp,
             channel: hcChannel_purplebubble,
             text: message.text,
