@@ -3,6 +3,8 @@ import { blog } from "../util/Logger";
 let hcTeam = "T0266FRGM";
 let hcChannel_purplebubble = "C068D2P46TH";
 let hcChannel_pbip = "C06AXC7B0QN";
+let hcmirrorTest = "C069N64PW4A";
+let pbmirrorTest = "C07ASSJGE2G";
 let pbTeam = "T07986PHP2R";
 let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
@@ -10,6 +12,8 @@ let pbChannel_pbpb = "C078WH9B44F";
 const channels = [
   hcChannel_pbip,
   hcChannel_purplebubble,
+  hcmirrorTest,
+  pbmirrorTest,
   pbChannel_pb,
   pbChannel_pbpb,
 ];
@@ -53,6 +57,21 @@ export async function mirror(pbClient, hcClient, message) {
       let userRealName = profile.real_name!;
 
       switch (messageChannel) {
+        case pbmirrorTest:
+          blog(
+            `Message sent #mirrorTest (PB) => #mirrorTest (HC): ${message.text}`,
+            "info"
+          );
+
+          hcClient.chat.postMessage({
+            username: userRealName,
+            icon_url: userpfp,
+            channel: hcmirrorTest,
+            text: message.text,
+            blocks: message.blocks,
+          });
+
+          break;
         case pbChannel_pbpb:
           blog(
             `Message sent #pb-pb (PB) => #pbip (HC): ${message.text}`,
@@ -98,6 +117,21 @@ export async function mirror(pbClient, hcClient, message) {
       let userRealName = profile.real_name!;
 
       switch (messageChannel) {
+        case hcmirrorTest:
+          blog(
+            `Message sent #mirrorTest (HC) => #mirrorTest (PB): ${message.text}`,
+            "info"
+          );
+
+          pbClient.chat.postMessage({
+            username: userRealName,
+            icon_url: userpfp,
+            channel: pbmirrorTest,
+            text: message.text,
+            blocks: message.blocks,
+          });
+
+          break;
         case hcChannel_purplebubble:
           blog(
             `Message sent #purplebubble (HC) => #pb (PB): ${message.text}`,

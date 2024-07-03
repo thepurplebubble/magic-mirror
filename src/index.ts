@@ -33,6 +33,9 @@ const HCapp = new SlackApp({
 const PBclient: SlackAPIClient = PBapp.client;
 const HCclient: SlackAPIClient = HCapp.client;
 
+PBapp.anyMessage(async ({ payload, context }) => {
+  await mirror(PBclient, HCclient, payload);
+});
 HCapp.anyMessage(async ({ payload, context }) => {
   await mirror(PBclient, HCclient, payload);
 });

@@ -6,22 +6,19 @@ import { PBclient } from "../index";
 import async from "async";
 import Bottleneck from "bottleneck";
 import colors from "colors";
+import { ChatPostMessageRequest } from "slack-edge";
 
 // Create a rate limiter with Bottleneck
 const limiter = new Bottleneck({
   minTime: 1000, // 1 second between each request
 });
 
-const messageQueue = async.queue(async (task, callback) => {
-  try {
+const messageQueue = async.queue(
+  async (task: ChatPostMessageRequest, callback) => {
     await limiter.schedule(() => PBclient.chat.postMessage(task));
-    callback();
-  } catch (error) {
-    console.error("Error posting message:", error);
-    // @ts-ignore
-    callback(error);
-  }
-}, 1); // Only one worker to ensure order and rate limit
+  },
+  1
+); // Only one worker to ensure order and rate limit
 
 async function slog(logMessage, type) {
   const message = {
