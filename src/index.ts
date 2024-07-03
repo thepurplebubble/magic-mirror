@@ -1,84 +1,47 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
-// import { PrismaClient } from "@prisma/client";
-import { App, ExpressReceiver } from "@slack/bolt";
-import colors from "colors";
-import express from "express";
+import elysia from "elysia";
+import { SlackAPIClient, SlackApp } from "slack-edge";
 
 import { indexEndpoint } from "./endpoints";
 import { healthEndpoint } from "./endpoints/health";
 import { mirror } from "./functions/mirror";
-import { slog } from "./util/Logger";
 
-// const prisma = new PrismaClient();
+const isdev = process.env.NODE_ENV === "development";
 
-const PBreceiver = new ExpressReceiver({
-  signingSecret: process.env.PB_SLACK_SIGNING_SECRET!,
+const PBapp = new SlackApp({
+  env: {
+    SLACK_BOT_TOKEN: process.env.PB_SLACK_BOT_TOKEN!,
+    SLACK_APP_TOKEN: process.env.PB_SLACK_APP_TOKEN!,
+    SLACK_SIGNING_SECRET: process.env.PB_SLACK_SIGNING_SECRET!,
+    SLACK_LOGGING_LEVEL: isdev ? "DEBUG" : "INFO",
+  },
 });
 
-const HCreceiver = new ExpressReceiver({
-  signingSecret: process.env.HC_SLACK_SIGNING_SECRET!,
+const HCapp = new SlackApp({
+  env: {
+    SLACK_BOT_TOKEN: process.env.HC_SLACK_BOT_TOKEN!,
+    SLACK_APP_TOKEN: process.env.HC_SLACK_APP_TOKEN!,
+    SLACK_SIGNING_SECRET: process.env.HC_SLACK_SIGNING_SECRET!,
+    SLACK_LOGGING_LEVEL: isdev ? "DEBUG" : "INFO",
+  },
 });
 
-const PBapp = new App({
-  token: process.env.PB_SLACK_BOT_TOKEN!,
-  appToken: process.env.PB_SLACK_APP_TOKEN!,
-  signingSecret: process.env.PB_SLACK_SIGNING_SECRET!,
-  receiver: PBreceiver,
+const PBclient: SlackAPIClient = PBapp.client;
+const HCclient: SlackAPIClient = HCapp.client;
+
+PBapp.anyMessage(async ({ payload, context }) => {
+  await mirror(PBclient, HCclient, payload);
 });
 
-const HCapp = new App({
-  token: process.env.HC_SLACK_BOT_TOKEN!,
-  appToken: process.env.HC_SLACK_APP_TOKEN!,
-  signingSecret: process.env.HC_SLACK_SIGNING_SECRET!,
-  receiver: HCreceiver,
+HCapp.anyMessage(async ({ payload, context }) => {
+  await mirror(PBclient, HCclient, payload);
 });
 
-const PBclient: any = PBapp.client;
-const HCclient: any = HCapp.client;
-
-PBapp.message(async ({ message, say }) => {
-  await mirror(PBclient, HCclient, message);
-});
-
-HCapp.message(async ({ message, say }) => {
-  await mirror(PBclient, HCclient, message);
-});
-
-PBreceiver.router.use(express.json());
-PBreceiver.router.get("/", indexEndpoint);
-PBreceiver.router.get("/ping", healthEndpoint);
-PBreceiver.router.get("/up", healthEndpoint);
-
-HCreceiver.router.use(express.json());
-HCreceiver.router.get("/", indexEndpoint);
-HCreceiver.router.get("/ping", healthEndpoint);
-HCreceiver.router.get("/up", healthEndpoint);
-
-PBapp.start(4000).then(async () => {
-  await slog("PB Bolt app is running", "startup");
-  console.log(
-    colors.bgCyan(`⚡️ PB Bolt app is running in env ${process.env.NODE_ENV}`)
-  );
-});
-
-HCapp.start(4001).then(async () => {
-  await slog("HC Bolt app is running", "startup");
-  console.log(
-    colors.bgCyan(`⚡️ HC Bolt app is running in env ${process.env.NODE_ENV}`)
-  );
-});
-
-// Heartbeat
-// new CronJob(
-//   "0 * * * * *",
-//   async function () {
-//     metrics.increment("heartbeat");
-//   },
-//   null,
-//   true,
-//   "America/New_York"
-// );
+new elysia()
+  .get("/", () => indexEndpoint)
+  .get("/ping", () => healthEndpoint)
+  .get("/up", () => healthEndpoint)
+  .get("/pb", ({ request }) => PBapp.run(request))
+  .get("/hc", ({ request }) => HCapp.run(request))
+  .listen(3000);
 
 export { HCapp, HCclient, PBapp, PBclient };

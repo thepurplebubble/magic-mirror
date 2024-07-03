@@ -1,6 +1,6 @@
 {
   "name": "slack-mirror",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Mirroring Slack Channels Between Workspaces",
   "main": "index.js",
   "maintainers": [
@@ -11,9 +11,9 @@
     }
   ],
   "scripts": {
-    "start": "node dist/index.js",
-    "build": "tsc",
-    "dev": "nodemon src/index.ts"
+    "start": "bun dist/index.ts",
+    "build": "bun build --compile --minify --sourcemap ./src/index.ts --outfile dist/mirror",
+    "dev": "bun run --watch src/index.ts"
   },
   "keywords": [],
   "author": "Jasper Mayone <me@jaspermayone.com>",
@@ -29,6 +29,7 @@
     "colors": "^1.4.0",
     "cron": "^3.1.7",
     "dotenv": "^16.4.5",
+    "elysia": "^1.0.27",
     "express": "^4.19.2",
     "form-data": "^4.0.0",
     "js-yaml": "^4.1.0",
@@ -37,6 +38,7 @@
     "nodemon": "^3.0.3",
     "postgres": "^3.4.4",
     "response-time": "^2.3.2",
+    "slack-edge": "^0.13.3",
     "tsx": "^4.9.3",
     "yaml": "^2.4.5"
   },
@@ -49,9 +51,5 @@
     "prisma": "5.16.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
-  },
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.4.0"
   }
 }
