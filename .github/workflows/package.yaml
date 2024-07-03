@@ -1,38 +1,25 @@
-name: Publish Package
-
-on:
-  release:
-    types: [created]
+name: Publish Docker Image
 
 env:
   IMAGE_NAME: magic-mirror
 
+on:
+  release:
+    types: [published]
+
 jobs:
-  push:
+  docker:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Push image
-        run: |
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          [ "$VERSION" == "main" ] && VERSION=latest
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
-
-          # Publish latest version
-          if [ "$VERSION" == "latest" ]; then
-            docker tag $IMAGE_NAME $IMAGE_ID:latest
-            docker push $IMAGE_ID:latest
-          fi
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          # add the release tag to the image as well as the latest tag
+          tags: ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME:latest, ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME:${{ github.ref_name }}
