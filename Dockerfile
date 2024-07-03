@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 FROM base AS build
 RUN mkdir -p /temp/prod
 COPY . /temp/prod/
-RUN cd /temp/prod && bun run build
+RUN cd /temp/prod && bun install && bun run build
 
 # copy production build to release image
 FROM base AS release
