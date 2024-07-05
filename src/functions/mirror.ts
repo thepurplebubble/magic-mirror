@@ -104,12 +104,15 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
+    let postParams: any = {};
+
     // check if the message is sent in a thread
-    if (message.thread_ts) {
-      return;
+    if (message.subtype === "thread_broadcast") {
+      // let threadTs = message.thread_ts;
+      // postParams.thread_ts = threadTs;
     }
 
-    const postParams = {
+    postParams = {
       username: userDisplayName,
       icon_url: userpfp,
       channel: channelMap[messageChannel],
