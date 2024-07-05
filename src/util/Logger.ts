@@ -44,6 +44,23 @@ async function slog(logMessage, type) {
     ],
   };
 
+  switch (type) {
+    case "info":
+      message.text = `:information_source: ${message.text}`;
+      break;
+    case "start":
+      message.text = `:rocket: ${message.text}`;
+      break;
+    case "cron":
+      message.text = `:alarm_clock: ${message.text}`;
+      break;
+    case "error":
+      message.text = `🚨 ${message.text}`;
+      break;
+    default:
+      message.text = message.text;
+  }
+
   messageQueue.push(message, (error) => {
     if (error) {
       console.error("Failed to send message:", error);

@@ -18,12 +18,12 @@ let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
 
 const channels = [
-  hcChannel_pbip,
-  hcChannel_purplebubble,
+  // hcChannel_pbip,
+  // hcChannel_purplebubble,
   hcmirrorTest,
   pbmirrorTest,
-  pbChannel_pb,
-  pbChannel_pbpb,
+  // pbChannel_pb,
+  // pbChannel_pbpb,
 ];
 
 const channelMap = {
@@ -47,12 +47,6 @@ export async function mirror(
     | (ThreadBroadcastMessageEvent & { team?: string })
 ) {
   try {
-    // see if message as sent by bot
-    // @ts-expect-error
-    if (message.bot_id) {
-      return;
-    }
-
     if (message.team === pbTeam) {
       team = "PB";
     } else if (message.team === hcTeam) {
@@ -86,6 +80,7 @@ export async function mirror(
     }
 
     blog(`Message received from team ${team}`, "info");
+    console.log(message);
 
     let messageTeam = message.team!;
     let messageChannel = message.channel!;
@@ -108,14 +103,16 @@ export async function mirror(
     let postParams: any = {};
 
     // check if the message is sent in a thread
-    if (message.subtype === "thread_broadcast") {
+    if (message.thread_ts) {
+      console.log("Thread broadcast message received");
+
       let threadTs = message.thread_ts;
       postParams.thread_ts = threadTs;
 
       // find the origin message
       let originMessage = await prisma.message.findFirst({
         where: {
-          mirrorTs: threadTs,
+          originTs: threadTs,
         },
       });
 
@@ -154,7 +151,7 @@ export async function mirror(
         originChannel: messageChannel,
         originTeam: pbTeam,
         mirrorTs: newMessage.ts,
-        mitrorChannel: newMessage.channel,
+        mirrorChannel: newMessage.channel,
         mirrorTeam: hcTeam,
       };
 
