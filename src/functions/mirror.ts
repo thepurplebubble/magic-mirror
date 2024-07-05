@@ -111,6 +111,24 @@ export async function mirror(
     if (message.subtype === "thread_broadcast") {
       let threadTs = message.thread_ts;
       postParams.thread_ts = threadTs;
+
+      // find the origin message
+      let originMessage = await prisma.message.findFirst({
+        where: {
+          mirrorTs: threadTs,
+        },
+      });
+
+      if (!originMessage) {
+        blog(`Could not find origin message for thread ${threadTs}`, "error");
+        return;
+      } else {
+        if (messageTeam === pbTeam) {
+          postParams.channel = channelMap[originMessage.originChannel];
+        } else if (messageTeam === hcTeam) {
+          postParams.channel = channelMap[originMessage.mirrorChannel];
+        }
+      }
     }
 
     postParams = {
