@@ -1,3 +1,4 @@
+import { PrismaClient } from "@prisma/client";
 import { SlackAPIClient, SlackApp } from "slack-edge";
 
 import { mirror } from "./functions/mirror";
@@ -12,6 +13,8 @@ console.log(
 console.log("🏗️  Starting Magic Mirror...");
 console.log("📦 Loading Slack App...");
 console.log("🔑 Loading environment variables...");
+
+const prisma = new PrismaClient();
 
 const PBapp = new SlackApp({
   env: {
@@ -49,7 +52,7 @@ console.log(
   "\n\n----------------------------------\n"
 );
 
-export { HCapp, HCclient, PBapp, PBclient };
+export { HCapp, HCclient, PBapp, PBclient, prisma };
 
 export default {
   port: 3000,

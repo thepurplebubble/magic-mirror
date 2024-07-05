@@ -5,6 +5,7 @@ import {
   SlackAPIClient,
   ThreadBroadcastMessageEvent,
 } from "slack-edge";
+import { prisma } from "../index";
 import { blog } from "../util/Logger";
 
 let hcTeam = "T0266FRGM";
@@ -121,18 +122,44 @@ export async function mirror(
     };
 
     if (messageTeam === pbTeam) {
-      hcClient.chat.postMessage(postParams).then(() => {
-        blog(
-          `Message sent from <#${messageChannel}> (PB) => #${channelMap[messageChannel]} (HC) : ${message.text}`,
-          "info"
-        );
+      const newMessage = await hcClient.chat.postMessage(postParams);
+
+      blog(
+        `Message sent from <#${messageChannel}> (PB) => #${channelMap[messageChannel]} (HC) : ${message.text}`,
+        "info"
+      );
+
+      // save the message to the database
+      await prisma.message.create({
+        data: {
+          user: message.user,
+          originTs: message.ts,
+          originChannel: messageChannel,
+          originTeam: pbTeam,
+          mirrorTs: newMessage.ts,
+          mitrorChannel: newMessage.channel,
+          mirrorTeam: hcTeam,
+        },
       });
     } else if (messageTeam === hcTeam) {
-      pbClient.chat.postMessage(postParams).then(() => {
-        blog(
-          `Message sent from #${messageChannel} (HC) => <#${channelMap[messageChannel]}> (PB) : ${message.text}`,
-          "info"
-        );
+      const newMessage = await pbClient.chat.postMessage(postParams);
+
+      blog(
+        `Message sent from #${messageChannel} (HC) => <#${channelMap[messageChannel]}> (PB) : ${message.text}`,
+        "info"
+      );
+
+      // save the message to the database
+      await prisma.message.create({
+        data: {
+          user: message.user,
+          originTs: message.ts,
+          originChannel: messageChannel,
+          originTeam: hcTeam,
+          mirrorTs: newMessage.ts,
+          mitrorChannel: newMessage.channel,
+          mirrorTeam: pbTeam,
+        },
       });
     }
   } catch (error) {
