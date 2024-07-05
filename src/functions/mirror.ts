@@ -184,7 +184,7 @@ export async function mirror(
         mirrorChannel: newMessage.channel,
         mirrorTeam: pbTeam,
         text: message.text,
-        blocks: message.blocks,
+        blocks: message.blocks?.toString(),
       };
 
       if (message.thread_ts) {
