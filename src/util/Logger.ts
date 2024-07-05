@@ -28,7 +28,7 @@ async function slog(logMessage, type) {
           type: "mrkdwn",
           text: logMessage
             .split("\n")
-            .map((a) => `> ${a}`)
+            .map((a) => `${a}`)
             .join("\n"),
         },
       },
@@ -46,16 +46,24 @@ async function slog(logMessage, type) {
 
   switch (type) {
     case "info":
-      message.text = `:information_source: ${message.text}`;
+      message.text = `> :information_source: ${message.text}`;
+      // @ts-expect-error
+      message.blocks[0].text.text = `> :information_source: ${message.blocks[0].text.text}`;
       break;
     case "start":
-      message.text = `:rocket: ${message.text}`;
+      message.text = `> :rocket: ${message.text}`;
+      // @ts-expect-error
+      message.blocks[0].text.text = `> :rocket: ${message.blocks[0].text.text}`;
       break;
     case "cron":
-      message.text = `:alarm_clock: ${message.text}`;
+      message.text = `> :alarm_clock: ${message.text}`;
+      // @ts-expect-error
+      message.blocks[0].text.text = `> :alarm_clock: ${message.blocks[0].text.text}`;
       break;
     case "error":
-      message.text = `🚨 Yo <@S0790GPRA48> deres an error \n\n [ERROR]: ${message.text}`;
+      message.text = `> 🚨 Yo <@U079DHX7FB6> deres an error \n\n [ERROR]: ${message.text}`;
+      // @ts-expect-error
+      message.blocks[0].text.text = `> 🚨 Yo <@U079DHX7FB6> deres an error \n\n [ERROR]: ${message.blocks[0].text.text}`;
       break;
     default:
       message.text = message.text;
