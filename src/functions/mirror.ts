@@ -89,26 +89,26 @@ export async function mirror(
     let userDisplayName = profile.display_name!;
 
     blog(
-      `Message sent <#${messageChannel}> (PB) => <#${channelMap[messageChannel]}> (HC): ${message.text}`,
+      `Message sent <#${messageChannel}> => <#${channelMap[messageChannel]}>: ${message.text}`,
       "info"
     );
 
+    const postParams = {
+      username: userDisplayName,
+      icon_url: userpfp,
+      channel: channelMap[messageChannel],
+      text: message.text,
+      blocks: message.blocks,
+    };
+
+    if (message.thread_ts) {
+      postParams["thread_ts"] = message.thread_ts;
+    }
+
     if (messageTeam === pbTeam) {
-      hcClient.chat.postMessage({
-        username: userDisplayName,
-        icon_url: userpfp,
-        channel: channelMap[messageChannel],
-        text: message.text,
-        blocks: message.blocks,
-      });
+      hcClient.chat.postMessage(postParams);
     } else if (messageTeam === hcTeam) {
-      pbClient.chat.postMessage({
-        username: userDisplayName,
-        icon_url: userpfp,
-        channel: channelMap[messageChannel],
-        text: message.text,
-        blocks: message.blocks,
-      });
+      pbClient.chat.postMessage(postParams);
     }
   } catch (error) {
     blog(`Error responding to message: ${error}`, "error");
