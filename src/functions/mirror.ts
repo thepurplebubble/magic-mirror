@@ -17,14 +17,7 @@ let pbTeam = "T07986PHP2R";
 let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
 
-const channels = [
-  // hcChannel_pbip,
-  // hcChannel_purplebubble,
-  hcmirrorTest,
-  pbmirrorTest,
-  // pbChannel_pb,
-  // pbChannel_pbpb,
-];
+const channels = [hcmirrorTest, pbmirrorTest];
 
 const channelMap = {
   [pbChannel_pb]: hcChannel_purplebubble,
@@ -100,35 +93,7 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
-    let postParams: any = {};
-
-    // check if the message is sent in a thread
-    if (message.thread_ts) {
-      console.log("Thread broadcast message received");
-
-      let threadTs = message.thread_ts;
-      postParams.thread_ts = threadTs;
-
-      // find the origin message
-      let originMessage = await prisma.message.findFirst({
-        where: {
-          originTs: threadTs,
-        },
-      });
-
-      if (!originMessage) {
-        blog(`Could not find origin message for thread ${threadTs}`, "error");
-        return;
-      } else {
-        if (messageTeam === pbTeam) {
-          postParams.channel = channelMap[originMessage.originChannel];
-        } else if (messageTeam === hcTeam) {
-          postParams.channel = channelMap[originMessage.mirrorChannel];
-        }
-      }
-    }
-
-    postParams = {
+    let postParams: any = {
       username: userDisplayName,
       icon_url: userpfp,
       channel: channelMap[messageChannel],
@@ -136,58 +101,62 @@ export async function mirror(
       blocks: message.blocks,
     };
 
-    if (messageTeam === pbTeam) {
-      const newMessage = await hcClient.chat.postMessage(postParams);
+    // check if the message is sent in a thread
+    if (message.thread_ts) {
+      console.log("Thread broadcast message received");
 
+      // find the origin message
+      let originMessage = await prisma.message.findFirst({
+        where: {
+          originTs: message.thread_ts,
+        },
+      });
+
+      if (!originMessage) {
+        blog(
+          `Could not find origin message for thread ${message.thread_ts}`,
+          "error"
+        );
+        return;
+      } else {
+        if (messageTeam === pbTeam) {
+          postParams.thread_ts = originMessage.mirrorTs; // Use the mirror timestamp for thread
+        } else if (messageTeam === hcTeam) {
+          postParams.thread_ts = originMessage.mirrorTs; // Use the mirror timestamp for thread
+        }
+      }
+    }
+
+    let newMessage;
+
+    if (messageTeam === pbTeam) {
+      newMessage = await hcClient.chat.postMessage(postParams);
       blog(
         `Message sent from <#${messageChannel}> (PB) => #${channelMap[messageChannel]} (HC) : ${message.text}`,
         "info"
       );
-
-      // save the message to the database
-      const data: any = {
-        user: message.user,
-        originTs: message.ts,
-        originChannel: messageChannel,
-        originTeam: pbTeam,
-        mirrorTs: newMessage.ts,
-        mirrorChannel: newMessage.channel,
-        mirrorTeam: hcTeam,
-      };
-
-      if (message.thread_ts) {
-        data.originThreadTs = message.thread_ts;
-      }
-
-      await prisma.message.create({
-        data,
-      });
     } else if (messageTeam === hcTeam) {
-      const newMessage = await pbClient.chat.postMessage(postParams);
-
+      newMessage = await pbClient.chat.postMessage(postParams);
       blog(
         `Message sent from #${messageChannel} (HC) => <#${channelMap[messageChannel]}> (PB) : ${message.text}`,
         "info"
       );
+    }
 
+    if (newMessage) {
       // save the message to the database
       const data: any = {
         user: message.user,
         originTs: message.ts,
         originChannel: messageChannel,
-        originTeam: hcTeam,
+        originTeam: messageTeam,
         mirrorTs: newMessage.ts,
         mirrorChannel: newMessage.channel,
-        mirrorTeam: pbTeam,
+        mirrorTeam: messageTeam === pbTeam ? hcTeam : pbTeam,
       };
 
       if (message.thread_ts) {
         data.originThreadTs = message.thread_ts;
-      }
-
-      // @ts-expect-error
-      if (newMessage.thread_ts) {
-        // @ts-expect-error
         data.mirrorThreadTs = newMessage.thread_ts;
       }
 
