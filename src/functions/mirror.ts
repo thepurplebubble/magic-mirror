@@ -59,7 +59,17 @@ export async function mirror(
       // @ts-expect-error
       message.subtype === "channel_join" ||
       // @ts-expect-error
-      message.subtype === "channel_leave"
+      message.subtype === "channel_leave" ||
+      // @ts-expect-error
+      message.subtype === "channel_archive" ||
+      // @ts-expect-error
+      message.subtype === "channel_unarchive" ||
+      // @ts-expect-error
+      message.subtype === "channel_topic" ||
+      // @ts-expect-error
+      message.subtype === "channel_purpose" ||
+      // @ts-expect-error
+      message.subtype === "channel_name"
     ) {
       return;
     }
@@ -88,11 +98,6 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
-    blog(
-      `Message sent <#${messageChannel}> => <#${channelMap[messageChannel]}>: ${message.text}`,
-      "info"
-    );
-
     const postParams = {
       username: userDisplayName,
       icon_url: userpfp,
@@ -101,14 +106,20 @@ export async function mirror(
       blocks: message.blocks,
     };
 
-    if (message.thread_ts) {
-      postParams["thread_ts"] = message.thread_ts;
-    }
-
     if (messageTeam === pbTeam) {
-      hcClient.chat.postMessage(postParams);
+      hcClient.chat.postMessage(postParams).then(() => {
+        blog(
+          `Message sent from <#${messageChannel}> (PB) => #${channelMap[messageChannel]} (HC) : ${message.text}`,
+          "info"
+        );
+      });
     } else if (messageTeam === hcTeam) {
-      pbClient.chat.postMessage(postParams);
+      pbClient.chat.postMessage(postParams).then(() => {
+        blog(
+          `Message sent from #${messageChannel} (HC) => <#${channelMap[messageChannel]}> (PB) : ${message.text}`,
+          "info"
+        );
+      });
     }
   } catch (error) {
     blog(`Error responding to message: ${error}`, "error");
