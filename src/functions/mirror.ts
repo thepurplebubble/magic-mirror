@@ -17,7 +17,14 @@ let pbTeam = "T07986PHP2R";
 let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
 
-const channels = [hcmirrorTest, pbmirrorTest];
+const channels = [
+  // hcChannel_pbip,
+  // hcChannel_purplebubble,
+  hcmirrorTest,
+  pbmirrorTest,
+  // pbChannel_pb,
+  // pbChannel_pbpb,
+];
 
 const channelMap = {
   [pbChannel_pb]: hcChannel_purplebubble,
@@ -93,66 +100,91 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
-    let postParams: any = {
-      username: userDisplayName,
-      icon_url: userpfp,
-      channel: channelMap[messageChannel],
-      text: message.text,
-      blocks: message.blocks,
-    };
+    let postParams: any = {};
 
-    // check if the message is sent in a thread
+    // Check if the message is sent in a thread
     if (message.thread_ts) {
       console.log("Thread broadcast message received");
 
-      // find the origin message
+      let threadTs = message.thread_ts;
+      postParams.thread_ts = threadTs;
+
+      // Find the origin message
       let originMessage = await prisma.message.findFirst({
         where: {
-          originTs: message.thread_ts,
+          originTs: threadTs,
         },
       });
 
       if (!originMessage) {
-        blog(
-          `Could not find origin message for thread ${message.thread_ts}`,
-          "error"
-        );
+        blog(`Could not find origin message for thread ${threadTs}`, "error");
         return;
       } else {
         if (messageTeam === pbTeam) {
-          postParams.thread_ts = originMessage.mirrorTs; // Use the mirror timestamp for thread
+          postParams.channel = channelMap[originMessage.originChannel];
         } else if (messageTeam === hcTeam) {
-          postParams.thread_ts = originMessage.mirrorTs; // Use the mirror timestamp for thread
+          postParams.channel = channelMap[originMessage.mirrorChannel];
         }
       }
+    } else {
+      postParams.channel = channelMap[messageChannel];
     }
 
-    let newMessage;
+    postParams = {
+      ...postParams,
+      username: userDisplayName,
+      icon_url: userpfp,
+      text: message.text,
+      blocks: message.blocks,
+    };
 
+    let newMessage;
     if (messageTeam === pbTeam) {
       newMessage = await hcClient.chat.postMessage(postParams);
+
       blog(
         `Message sent from <#${messageChannel}> (PB) => #${channelMap[messageChannel]} (HC) : ${message.text}`,
         "info"
       );
-    } else if (messageTeam === hcTeam) {
-      newMessage = await pbClient.chat.postMessage(postParams);
-      blog(
-        `Message sent from #${messageChannel} (HC) => <#${channelMap[messageChannel]}> (PB) : ${message.text}`,
-        "info"
-      );
-    }
 
-    if (newMessage) {
-      // save the message to the database
+      // Save the message to the database
       const data: any = {
         user: message.user,
         originTs: message.ts,
         originChannel: messageChannel,
-        originTeam: messageTeam,
+        originTeam: pbTeam,
         mirrorTs: newMessage.ts,
         mirrorChannel: newMessage.channel,
-        mirrorTeam: messageTeam === pbTeam ? hcTeam : pbTeam,
+        mirrorTeam: hcTeam,
+      };
+
+      if (message.thread_ts) {
+        data.originThreadTs = message.thread_ts;
+        data.mirrorThreadTs = newMessage.thread_ts;
+      }
+
+      await prisma.message.create({
+        data,
+      });
+    } else if (messageTeam === hcTeam) {
+      newMessage = await pbClient.chat.postMessage(postParams);
+
+      blog(
+        `Message sent from #${messageChannel} (HC) => <#${channelMap[messageChannel]}> (PB) : ${message.text}`,
+        "info"
+      );
+
+      // Save the message to the database
+      const data: any = {
+        user: message.user,
+        originTs: message.ts,
+        originChannel: messageChannel,
+        originTeam: hcTeam,
+        mirrorTs: newMessage.ts,
+        mirrorChannel: newMessage.channel,
+        mirrorTeam: pbTeam,
+        text: message.text,
+        blocks: message.blocks,
       };
 
       if (message.thread_ts) {
