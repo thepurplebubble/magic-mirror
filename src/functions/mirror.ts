@@ -109,8 +109,8 @@ export async function mirror(
 
     // check if the message is sent in a thread
     if (message.subtype === "thread_broadcast") {
-      // let threadTs = message.thread_ts;
-      // postParams.thread_ts = threadTs;
+      let threadTs = message.thread_ts;
+      postParams.thread_ts = threadTs;
     }
 
     postParams = {
@@ -130,16 +130,22 @@ export async function mirror(
       );
 
       // save the message to the database
+      const data: any = {
+        user: message.user,
+        originTs: message.ts,
+        originChannel: messageChannel,
+        originTeam: pbTeam,
+        mirrorTs: newMessage.ts,
+        mitrorChannel: newMessage.channel,
+        mirrorTeam: hcTeam,
+      };
+
+      if (message.thread_ts) {
+        data.originThreadTs = message.thread_ts;
+      }
+
       await prisma.message.create({
-        data: {
-          user: message.user,
-          originTs: message.ts,
-          originChannel: messageChannel,
-          originTeam: pbTeam,
-          mirrorTs: newMessage.ts,
-          mitrorChannel: newMessage.channel,
-          mirrorTeam: hcTeam,
-        },
+        data,
       });
     } else if (messageTeam === hcTeam) {
       const newMessage = await pbClient.chat.postMessage(postParams);
@@ -150,16 +156,28 @@ export async function mirror(
       );
 
       // save the message to the database
+      const data: any = {
+        user: message.user,
+        originTs: message.ts,
+        originChannel: messageChannel,
+        originTeam: hcTeam,
+        mirrorTs: newMessage.ts,
+        mirrorChannel: newMessage.channel,
+        mirrorTeam: pbTeam,
+      };
+
+      if (message.thread_ts) {
+        data.originThreadTs = message.thread_ts;
+      }
+
+      // @ts-expect-error
+      if (newMessage.thread_ts) {
+        // @ts-expect-error
+        data.mirrorThreadTs = newMessage.thread_ts;
+      }
+
       await prisma.message.create({
-        data: {
-          user: message.user,
-          originTs: message.ts,
-          originChannel: messageChannel,
-          originTeam: hcTeam,
-          mirrorTs: newMessage.ts,
-          mitrorChannel: newMessage.channel,
-          mirrorTeam: pbTeam,
-        },
+        data,
       });
     }
   } catch (error) {

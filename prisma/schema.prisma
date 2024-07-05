@@ -14,13 +14,15 @@ datasource db {
 }
 
 model Message {
-  user          String
-  originTs      String @id @unique
-  originTeam    String
-  originChannel String
-  mirrorTs      String
-  mirrorTeam    String
-  mirrorChannel String
-  text          String
-  blocks        String
+  user           String
+  originTs       String  @id @unique
+  originTeam     String
+  originChannel  String
+  originThreadTs String?
+  mirrorTs       String  @unique
+  mirrorTeam     String
+  mirrorChannel  String
+  mirrorThreadTs String?
+  text           String?
+  blocks         String?
 }
