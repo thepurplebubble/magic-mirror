@@ -46,6 +46,12 @@ export async function mirror(
     | (ThreadBroadcastMessageEvent & { team?: string })
 ) {
   try {
+    // see if message as sent by bot
+    // @ts-expect-error
+    if (message.bot_id) {
+      return;
+    }
+
     if (message.team === pbTeam) {
       team = "PB";
     } else if (message.team === hcTeam) {
@@ -97,6 +103,11 @@ export async function mirror(
     let profile = userProfile.profile!;
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
+
+    // check if the message is sent in a thread
+    if (message.thread_ts) {
+      return;
+    }
 
     const postParams = {
       username: userDisplayName,
