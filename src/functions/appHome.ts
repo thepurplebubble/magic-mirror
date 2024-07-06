@@ -150,7 +150,7 @@ async function getSettingsMenuBlocks(allowed: boolean): Promise<AnyHomeTabBlock[
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: `Analytics :blobby-bar_chart:\n\nTotal Top Level Messages: ${messages.length} messages`,
+                text: `:blobby-bar_chart: Analytics:\n\nTotal Top Level Messages: ${messages.length} messages`,
             },
         },
         {
