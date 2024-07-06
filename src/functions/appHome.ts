@@ -11,7 +11,6 @@ export async function appHome(event: AppHomeOpenedEvent, context: PreAuthorizeSl
 }) {
     // check if its opening the home tab
     if (event.tab !== "home") {
-        console.log("📥 App Home Opened, but not home tab", event.tab);
         return;
     }
 
@@ -22,13 +21,12 @@ export async function appHome(event: AppHomeOpenedEvent, context: PreAuthorizeSl
 
     // check if the user is authorized
     if (user.user?.is_owner || user.user?.is_admin || process.env.ADMINS?.split(",").includes(user.user?.id!)) {
-        console.log("📥 User is authorized to view the settings page", user.user!.name);
         // update the home tab
         await context.client.views.publish({
             user_id: event.user,
             view: {
                 type: "home",
-                blocks: await getSettingsMenuBlocks(true),
+                blocks: await getSettingsMenuBlocks(true, event.user),
             },
         });
         return;
@@ -39,7 +37,7 @@ export async function appHome(event: AppHomeOpenedEvent, context: PreAuthorizeSl
             user_id: event.user,
             view: {
                 type: "home",
-                blocks: await getSettingsMenuBlocks(false),
+                blocks: await getSettingsMenuBlocks(false, event.user),
             },
         });
         return;
@@ -71,7 +69,7 @@ export async function toggleEnabled(event: BlockAction<ButtonAction>, context: P
             user_id: event.user.id,
             view: {
                 type: "home",
-                blocks: await getSettingsMenuBlocks(true),
+                blocks: await getSettingsMenuBlocks(true, event.user.id),
             },
         });
         return;
@@ -82,15 +80,16 @@ export async function toggleEnabled(event: BlockAction<ButtonAction>, context: P
             user_id: event.user.id,
             view: {
                 type: "home",
-                blocks: await getSettingsMenuBlocks(false),
+                blocks: await getSettingsMenuBlocks(false, event.user.id),
             },
         });
         return;
     }
 }
 
-async function getSettingsMenuBlocks(allowed: boolean): Promise<AnyHomeTabBlock[]> {
+async function getSettingsMenuBlocks(allowed: boolean, user: string): Promise<AnyHomeTabBlock[]> {
     if (!allowed) {
+        console.log("📥 User is not authorized", user);
         return [
             {
                 type: "section",
@@ -111,6 +110,8 @@ async function getSettingsMenuBlocks(allowed: boolean): Promise<AnyHomeTabBlock[
             },
         ];
     }
+
+    console.log("📥 User is authorized to view the settings page", user);
 
     // get all the settings
     const settings = await prisma.settings.findMany();
