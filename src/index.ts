@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { SlackAPIClient, SlackApp } from "slack-edge";
 
 import { mirror } from "./functions/mirror";
-import { appHome } from "./functions/appHome";
+import { appHome, toggleEnabled } from "./functions/appHome";
 
 const wantDebug = process.env.DEBUG === "true";
 wantDebug;
@@ -52,6 +52,14 @@ PBapp.event("app_home_opened", async ({ payload, context }) => {
 
 HCapp.event("app_home_opened", async ({ payload, context }) => {
   await appHome(payload, context);
+});
+
+PBapp.action("toggleEnabled", async ({ payload, context }) => {
+  await toggleEnabled(payload, context);
+});
+
+HCapp.action("toggleEnabled", async ({ payload, context }) => {
+  await toggleEnabled(payload, context);
 });
 
 let enabled = true;
@@ -111,7 +119,7 @@ console.log(
   "\n\n----------------------------------\n"
 );
 
-export { HCapp, HCclient, PBapp, PBclient, prisma, enabled };
+export { HCapp, HCclient, PBapp, PBclient, prisma, getEnabled, updateEnabled };
 
 export default {
   port: 3000,

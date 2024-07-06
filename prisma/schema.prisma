@@ -27,7 +27,7 @@ model Settings {
   id String @id @default(uuid())
 
   // the setting value
-  setting String
+  setting String @unique
 
   // value of the setting
   value String?
