@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { SlackAPIClient, SlackApp } from "slack-edge";
 
 import { mirror } from "./functions/mirror";
+import { appHome } from "./functions/appHome";
 
 const wantDebug = process.env.DEBUG === "true";
 wantDebug;
@@ -42,6 +43,15 @@ PBapp.anyMessage(async ({ payload }) => {
 });
 HCapp.anyMessage(async ({ payload }) => {
   await mirror(PBclient, HCclient, payload);
+});
+
+// listen for the app home open event
+PBapp.event("app_home_opened", async ({ payload, context }) => {
+  await appHome(payload, context);
+});
+
+HCapp.event("app_home_opened", async ({ payload, context }) => {
+  await appHome(payload, context);
 });
 
 let enabled = true;
