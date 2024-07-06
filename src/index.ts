@@ -55,10 +55,12 @@ HCapp.event("app_home_opened", async ({ payload, context }) => {
 });
 
 PBapp.action("toggleEnabled", async ({ payload, context }) => {
+  // @ts-expect-error
   await toggleEnabled(payload, context);
 });
 
 HCapp.action("toggleEnabled", async ({ payload, context }) => {
+  // @ts-expect-error
   await toggleEnabled(payload, context);
 });
 
