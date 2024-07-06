@@ -44,6 +44,21 @@ HCapp.anyMessage(async ({ payload, context }) => {
   await mirror(PBclient, HCclient, payload);
 });
 
+let enabled = true;
+
+(async () => {
+  enabled = await prisma.settings.findFirst({
+    where: {
+      setting: "enabled",
+    },
+  }).then((setting) => {
+    if (setting && setting.boolean) {
+      return setting.boolean
+    }
+    return true;
+  });
+})
+
 console.log(
   "🚀 Server Started in",
   Bun.nanoseconds() / 1000000,
@@ -52,7 +67,7 @@ console.log(
   "\n\n----------------------------------\n"
 );
 
-export { HCapp, HCclient, PBapp, PBclient, prisma };
+export { HCapp, HCclient, PBapp, PBclient, prisma, enabled };
 
 export default {
   port: 3000,

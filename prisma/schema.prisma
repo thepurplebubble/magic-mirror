@@ -20,3 +20,18 @@ model Message {
   pbTs      String @unique // the ts from the message in the server the message was mirrored
   pbChannel String // the channel id where the message was mirrored
 }
+
+// settings for the app
+model Settings {
+  // the id of the setting
+  id String @id @default(uuid())
+
+  // the setting value
+  setting String
+
+  // value of the setting
+  value String?
+
+  // or a boolean
+  boolean Boolean?
+}
