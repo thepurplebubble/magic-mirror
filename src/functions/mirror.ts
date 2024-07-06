@@ -18,15 +18,6 @@ let pbTeam = "T07986PHP2R";
 let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
 
-const channels = [
-  // hcChannel_pbip,
-  // hcChannel_purplebubble,
-  hcmirrorTest,
-  pbmirrorTest,
-  // pbChannel_pb,
-  // pbChannel_pbpb,
-];
-
 const channelMap = {
   // [pbChannel_pb]: hcChannel_purplebubble,
   // [pbChannel_pbpb]: hcChannel_pbip,
@@ -35,6 +26,17 @@ const channelMap = {
   // [hcChannel_purplebubble]: pbChannel_pb,
   // [hcChannel_pbip]: pbChannel_pbpb,
 };
+
+function hasChannel(channel: string): boolean {
+  // check all keys and values in the channelMap for the channel
+  for (const key in channelMap) {
+    if (channelMap[key] === channel || key === channel) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 let team;
 
@@ -48,6 +50,10 @@ export async function mirror(
     | (ThreadBroadcastMessageEvent & { team?: string })
 ) {
   try {
+    if (!hasChannel(message.channel)) {
+      return;
+    }
+
     if (message.team === pbTeam) {
       team = "PB";
     } else if (message.team === hcTeam) {
