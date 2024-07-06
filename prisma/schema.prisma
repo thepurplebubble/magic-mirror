@@ -14,15 +14,9 @@ datasource db {
 }
 
 model Message {
-  user           String // the slack user id who sent the message
-  originTs       String  @id @unique // the ts from the message in the server the message was sent
-  originTeam     String // the team id where the message was sent
-  originChannel  String // the channel id where the message was sent
-  originThreadTs String? // the thread ts where the message was sent
-  mirrorTs       String  @unique // the ts from the message in the server the message was mirrored
-  mirrorTeam     String // the team id where the message was mirrored
-  mirrorChannel  String // the channel id where the message was mirrored
-  mirrorThreadTs String? // the thread ts where the message was mirrored
-  text           String? // the text of the message
-  blocks         String? // the blocks of the message
+  user      String // the slack user id who sent the message
+  hcTs      String @id @unique // the ts from the message in the server the message was sent
+  hcChannel String // the channel id where the message was sent
+  pbTs      String @unique // the ts from the message in the server the message was mirrored
+  pbChannel String // the channel id where the message was mirrored
 }

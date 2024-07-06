@@ -1,5 +1,6 @@
 import {
   BotMessageEvent,
+  ChatPostMessageRequest,
   FileShareMessageEvent,
   GenericMessageEvent,
   SlackAPIClient,
@@ -27,12 +28,12 @@ const channels = [
 ];
 
 const channelMap = {
-  [pbChannel_pb]: hcChannel_purplebubble,
-  [pbChannel_pbpb]: hcChannel_pbip,
+  // [pbChannel_pb]: hcChannel_purplebubble,
+  // [pbChannel_pbpb]: hcChannel_pbip,
   [pbmirrorTest]: hcmirrorTest,
   [hcmirrorTest]: pbmirrorTest,
-  [hcChannel_purplebubble]: pbChannel_pb,
-  [hcChannel_pbip]: pbChannel_pbpb,
+  // [hcChannel_purplebubble]: pbChannel_pb,
+  // [hcChannel_pbip]: pbChannel_pbpb,
 };
 
 let team;
@@ -100,101 +101,102 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
-    let postParams: any = {};
+    let sendingMessage: ChatPostMessageRequest | null = null;
 
     // Check if the message is sent in a thread
     if (message.thread_ts) {
       console.log("Thread broadcast message received");
 
       let threadTs = message.thread_ts;
-      postParams.thread_ts = threadTs;
+      let originMessage: {
+        user: string;
+        hcTs: string;
+        hcChannel: string;
+        pbTs: string;
+        pbChannel: string;
+      } | null = null;
 
-      // Find the origin message
-      let originMessage = await prisma.message.findFirst({
-        where: {
-          originTs: threadTs,
-        },
-      });
+      if (messageTeam === hcTeam) {
+        // Find the origin message
+        originMessage = await prisma.message.findFirst({
+          where: {
+            hcTs: threadTs,
+            hcChannel: messageChannel,
+          },
+        });
+      } else {
+        // Find the origin message
+        originMessage = await prisma.message.findFirst({
+          where: {
+            pbTs: threadTs,
+            pbChannel: messageChannel,
+          },
+        });
+      }
 
       if (!originMessage) {
         blog(`Could not find origin message for thread ${threadTs}`, "error");
         return;
-      } else {
-        if (messageTeam === pbTeam) {
-          postParams.channel = channelMap[originMessage.originChannel];
-        } else if (messageTeam === hcTeam) {
-          postParams.channel = channelMap[originMessage.mirrorChannel];
-        }
       }
-    } else {
-      postParams.channel = channelMap[messageChannel];
+
+      sendingMessage = {
+        thread_ts: messageTeam === hcTeam ? originMessage.pbTs : originMessage.hcTs,
+        channel: channelMap[messageChannel],
+        username: userDisplayName,
+        icon_url: userpfp,
+        text: message.text,
+        blocks: message.blocks,
+      };
     }
 
-    postParams = {
-      ...postParams,
-      username: userDisplayName,
-      icon_url: userpfp,
-      text: message.text,
-      blocks: message.blocks,
-    };
-
-    let newMessage;
-    if (messageTeam === pbTeam) {
-      newMessage = await hcClient.chat.postMessage(postParams);
-
-      blog(
-        `Message sent from <#${messageChannel}> (PB) => #${channelMap[messageChannel]} (HC) : ${message.text}`,
-        "info"
-      );
-
-      // Save the message to the database
-      const data: any = {
-        user: message.user,
-        originTs: message.ts,
-        originChannel: messageChannel,
-        originTeam: pbTeam,
-        mirrorTs: newMessage.ts,
-        mirrorChannel: newMessage.channel,
-        mirrorTeam: hcTeam,
-      };
-
-      if (message.thread_ts) {
-        data.originThreadTs = message.thread_ts;
-        data.mirrorThreadTs = newMessage.thread_ts;
+    if (sendingMessage) {
+      if (messageTeam === hcTeam) {
+        await pbClient.chat.postMessage(sendingMessage);
+      } else if (messageTeam === pbTeam) {
+        await hcClient.chat.postMessage(sendingMessage);
       }
+    } else {
+      blog(`Creating a new top level message`, "info");
 
-      await prisma.message.create({
-        data,
-      });
-    } else if (messageTeam === hcTeam) {
-      newMessage = await pbClient.chat.postMessage(postParams);
+      if (messageTeam === hcTeam) {
+        // send a new message
+        const newMessage = await pbClient.chat.postMessage({
+          channel: channelMap[messageChannel],
+          username: userDisplayName,
+          icon_url: userpfp,
+          text: message.text,
+          blocks: message.blocks,
+        });
 
-      blog(
-        `Message sent from #${messageChannel} (HC) => <#${channelMap[messageChannel]}> (PB) : ${message.text}`,
-        "info"
-      );
+        await prisma.message.create({
+          data: {
+            user: message.user,
+            hcTs: message.ts,
+            hcChannel: messageChannel,
+            pbTs: newMessage.ts!,
+            pbChannel: channelMap[messageChannel],
+          },
+        });
+      } else if (messageTeam === pbTeam) {
+        // send a new message
+        const newMessage = await hcClient.chat.postMessage({
+          channel: channelMap[messageChannel],
+          username: userDisplayName,
+          icon_url: userpfp,
+          text: message.text,
+          blocks: message.blocks,
+        });
 
-      // Save the message to the database
-      const data: any = {
-        user: message.user,
-        originTs: message.ts,
-        originChannel: messageChannel,
-        originTeam: hcTeam,
-        mirrorTs: newMessage.ts,
-        mirrorChannel: newMessage.channel,
-        mirrorTeam: pbTeam,
-        text: message.text,
-        blocks: message.blocks?.toString(),
-      };
-
-      if (message.thread_ts) {
-        data.originThreadTs = message.thread_ts;
-        data.mirrorThreadTs = newMessage.thread_ts;
+        await prisma.message.create({
+          data: {
+            user: message.user,
+            hcTs: newMessage.ts!,
+            hcChannel: channelMap[messageChannel],
+            pbTs: message.ts,
+            pbChannel: messageChannel,
+          }
+        });
       }
-
-      await prisma.message.create({
-        data,
-      });
     }
   } catch (error) {
     blog(`Error responding to message: ${error}`, "error");

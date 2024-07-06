@@ -46,7 +46,7 @@
     "@types/node": "^20.14.9",
     "@types/node-statsd": "^0.1.6",
     "@types/response-time": "^2.3.8",
-    "prisma": "5.16.1",
+    "prisma": "^5.16.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }
