@@ -152,6 +152,16 @@ async function getSettingsMenuBlocks(allowed: boolean): Promise<AnyHomeTabBlock[
                 type: "mrkdwn",
                 text: `Analytics :blobby-bar_chart:\n\nTotal Top Level Messages: ${messages.length} messages`,
             },
-        }
+        },
+        {
+            type: "divider",
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: `:blobby-admission_tickets: Admins: \n\n${process.env.ADMINS?.split(",").map(admin => `<@${admin}>`).join(" ")}`,
+            },
+        },
     ];
 }
