@@ -6,8 +6,9 @@ import {
   SlackAPIClient,
   ThreadBroadcastMessageEvent,
 } from "slack-edge";
-import { enabled, prisma } from "../index";
+import { getEnabled, prisma } from "../index";
 import { blog } from "../util/Logger";
+import { get } from "http";
 
 let hcTeam = "T0266FRGM";
 let hcChannel_purplebubble = "C068D2P46TH";
@@ -50,7 +51,7 @@ export async function mirror(
     | (ThreadBroadcastMessageEvent & { team?: string })
 ) {
   try {
-    if (!enabled) {
+    if (!getEnabled()) {
       return;
     }
 

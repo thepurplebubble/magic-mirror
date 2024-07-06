@@ -55,6 +55,40 @@ HCapp.event("app_home_opened", async ({ payload, context }) => {
 });
 
 let enabled = true;
+async function updateEnabled(value: boolean) {
+  enabled = value;
+
+  // update the settings
+  const existingSetting = await prisma.settings.findUnique({
+    where: {
+      setting: "enabled",
+    },
+  });
+
+  if (existingSetting) {
+    console.log("📥 Updating existing setting", value);
+    await prisma.settings.update({
+      where: {
+        setting: "enabled",
+      },
+      data: {
+        boolean: value,
+      },
+    });
+  } else {
+    console.log("📥 Creating new setting", value);
+    await prisma.settings.create({
+      data: {
+        setting: "enabled",
+        boolean: value,
+      },
+    });
+  }
+}
+
+function getEnabled() {
+  return enabled;
+}
 
 (async () => {
   enabled = await prisma.settings.findFirst({
