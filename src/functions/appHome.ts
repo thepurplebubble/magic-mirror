@@ -114,6 +114,7 @@ async function getSettingsMenuBlocks(allowed: boolean): Promise<AnyHomeTabBlock[
 
     // get all the settings
     const settings = await prisma.settings.findMany();
+    const messages = await prisma.message.findMany();
     // update the home tab
     return [
         {
@@ -141,6 +142,16 @@ async function getSettingsMenuBlocks(allowed: boolean): Promise<AnyHomeTabBlock[
                 },
                 action_id: "toggleEnabled",
             }
+        },
+        {
+            type: "divider",
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: `Analytics :blobby-bar_chart:\n\nTotal Top Level Messages: ${messages.length} messages`,
+            },
         }
     ];
 }
