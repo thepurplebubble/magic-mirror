@@ -131,17 +131,22 @@ async function getSettingsMenuBlocks(allowed: boolean): Promise<AnyHomeTabBlock[
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: `App status: ${settings.find(setting => setting.setting === "enabled")?.boolean ? ":white_check_mark:" : ":x:"}`,
-            },
-            accessory: {
-                type: "button",
-                text: {
-                    type: "plain_text",
-                    text: "Toggle",
-                    emoji: true
-                },
-                action_id: "toggleEnabled",
+                text: `:neocat_happy: App status: ${settings.find(setting => setting.setting === "enabled")?.boolean ? ":white_check_mark:" : ":x:"}`,
             }
+        },
+        {
+            type: "actions",
+            elements: [
+                {
+                    type: "button",
+                    text: {
+                        type: "plain_text",
+                        text: "Toggle App Status to " + (!settings.find(setting => setting.setting === "enabled")?.boolean ? ":white_check_mark:" : ":x:"),
+                        emoji: true
+                    },
+                    action_id: "toggleEnabled",
+                }
+            ]
         },
         {
             type: "divider",
