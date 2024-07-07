@@ -95,7 +95,6 @@ export async function mirror(
     }
 
     blog(`Message received from team ${team}`, "info");
-    console.log(message);
 
     // @ts-expect-error
     let messageTeam = message.team! ?? message.files[0].user_team!;
