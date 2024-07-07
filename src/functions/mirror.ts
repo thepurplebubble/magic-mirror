@@ -59,9 +59,12 @@ export async function mirror(
       return;
     }
 
-    if (message.team === pbTeam) {
+    // @ts-expect-error
+    if (message.team === pbTeam || message.files[0].user_team === pbTeam) {
       team = "PB";
-    } else if (message.team === hcTeam) {
+    }
+    // @ts-expect-error
+    else if (message.team === hcTeam || message.files[0].user_team === hcTeam) {
       team = "HC";
     } else {
       team = "Unknown";
