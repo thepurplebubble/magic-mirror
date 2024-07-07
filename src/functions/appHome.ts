@@ -145,6 +145,7 @@ async function getSettingsMenuBlocks(
   // get all the settings
   const settings = await prisma.settings.findMany();
   const messages = await prisma.message.findMany();
+  const analytics = await prisma.analytics.findMany();
   // update the home tab
   return [
     {
@@ -191,6 +192,20 @@ async function getSettingsMenuBlocks(
       text: {
         type: "mrkdwn",
         text: `:blobby-bar_chart: Analytics:\n\nTotal Top Level Messages: ${messages.length} messages`,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `Messages Sent Over the Last 5 Days: ${analytics.slice(0, 5).map((analytics) => analytics.totalSyncedMessages).join(" ")}`,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `Threads Created Sent the Last 5 Days: ${analytics.slice(0, 5).map((analytics) => analytics.newThreads).join(" ")}`,
       },
     },
     {
