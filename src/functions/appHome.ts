@@ -147,7 +147,7 @@ async function getSettingsMenuBlocks(
   // get all the settings
   const settings = await prisma.settings.findMany();
   const messages = await prisma.message.findMany();
-  const analytics = await prisma.analytics.findMany();
+  const analytics = (await prisma.analytics.findMany()).sort((a, b) => b.day.localeCompare(a.day)).reverse();
   // update the home tab
   return [
     {
