@@ -65,8 +65,7 @@ export async function mirror(
       (message.files && message.files[0].user_team === pbTeam)
     ) {
       team = "PB";
-    }
-    else if (
+    } else if (
       message.team === hcTeam ||
       // @ts-expect-error
       (message.files && message.files[0].user_team === hcTeam)
