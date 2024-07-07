@@ -175,7 +175,7 @@ export async function mirror(
         icon_url: userpfp,
         text: message.text,
         // @ts-expect-error
-        blocks: message.files ? [...message.blocks!, ...fileBlocks] : message.blocks,
+        blocks: message.files ? [...(message.blocks ?? []), ...fileBlocks] : message.blocks,
         unfurl_links: true,
         unfurl_media: true,
       };
@@ -200,7 +200,7 @@ export async function mirror(
           icon_url: userpfp,
           text: message.text,
           // @ts-expect-error
-          blocks: message.files ? [...message.blocks!, ...fileBlocks] : message.blocks,
+          blocks: message.files ? [...message.blocks ?? [], ...fileBlocks] : message.blocks,
           unfurl_links: true,
           unfurl_media: true,
         });
@@ -222,7 +222,7 @@ export async function mirror(
           icon_url: userpfp,
           text: message.text,
           // @ts-expect-error
-          blocks: message.files ? [...message.blocks!, ...fileBlocks] : message.blocks,
+          blocks: message.files ? [...message.blocks ?? [], ...fileBlocks] : message.blocks,
           unfurl_links: true,
           unfurl_media: true,
         });
