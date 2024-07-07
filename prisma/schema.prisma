@@ -35,3 +35,16 @@ model Settings {
   // or a boolean
   boolean Boolean?
 }
+
+model Analytics {
+  // the id of the analytics
+  id String @id @default(uuid())
+
+  // the analytics value
+  day String @unique
+
+  // value of the analytics
+  newThreads Int
+
+  totalSyncedMessages Int
+}

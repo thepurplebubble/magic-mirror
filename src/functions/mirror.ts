@@ -192,6 +192,7 @@ export async function mirror(
         unfurl_media: true,
       };
     }
+    const day = new Date().toISOString().split("T")[0];
 
     if (sendingMessage) {
       if (messageTeam === hcTeam) {
@@ -199,6 +200,22 @@ export async function mirror(
       } else if (messageTeam === pbTeam) {
         await hcClient.chat.postMessage(sendingMessage);
       }
+
+      await prisma.analytics.upsert({
+        where: {
+          day: day,
+        },
+        update: {
+          totalSyncedMessages: {
+            increment: 1,
+          },
+        },
+        create: {
+          day: day,
+          newThreads: 0,
+          totalSyncedMessages: 1,
+        },
+      });
     } else {
       blog(`Creating a new top level message`, "info");
 
@@ -251,6 +268,22 @@ export async function mirror(
           },
         });
       }
+
+      await prisma.analytics.upsert({
+        where: {
+          day: day,
+        },
+        update: {
+          newThreads: {
+            increment: 1,
+          },
+        },
+        create: {
+          day: day,
+          newThreads: 1,
+          totalSyncedMessages: 0,
+        },
+      });
     }
   } catch (error) {
     blog(`Error responding to message: ${error}`, "error");
