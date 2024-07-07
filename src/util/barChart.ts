@@ -1,4 +1,4 @@
-export default function barChartGenerator(data: number[], height: number, labels: string[]) {
+export default function barChartGenerator(data: number[], height: number, labels: string[], dataPoint: string) {
     // find the max value
     const maxValue = Math.max(...data);
     // find the lengh of the longest label or data point
@@ -30,7 +30,7 @@ export default function barChartGenerator(data: number[], height: number, labels
         let barChartString = "";
         for (let j = 0; j < data.length; j++) {
             if (data[j] / divisionFactor >= i) {
-                barChartString += "x".padEnd(columnWidth) + " ";
+                barChartString += dataPoint + " ".padEnd(columnWidth - dataPoint.length);
             }
         }
 
