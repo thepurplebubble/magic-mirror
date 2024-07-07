@@ -9,6 +9,8 @@ import {
 } from "slack-edge";
 import { prisma, updateEnabled, getEnabled } from "..";
 
+import barChartGenerator from "../util/barChart";
+
 export async function appHome(
   event: AppHomeOpenedEvent,
   context: PreAuthorizeSlackAppContext & {
@@ -198,14 +200,20 @@ async function getSettingsMenuBlocks(
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `Messages Sent Over the Last 5 Days: ${analytics.slice(0, 5).map((analytics) => analytics.totalSyncedMessages).join(" ")}`,
+        text: `Messages Sent Over the Last 5 Days:\n\n${barChartGenerator(
+          analytics.slice(0, 5).map((analytics) => analytics.totalSyncedMessages), 5,
+          ["day 1", "day 2", "day 3", "day 4", "day 5"],
+        )}`
       },
     },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `Threads Created Sent the Last 5 Days: ${analytics.slice(0, 5).map((analytics) => analytics.newThreads).join(" ")}`,
+        text: `Threads Created Sent the Last 5 Days:\n\n${barChartGenerator(
+          analytics.slice(0, 5).map((analytics) => analytics.newThreads), 5,
+          ["day 1", "day 2", "day 3", "day 4", "day 5"],
+        )}`,
       },
     },
     {
