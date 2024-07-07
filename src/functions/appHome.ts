@@ -204,7 +204,7 @@ async function getSettingsMenuBlocks(
           analytics.slice(0, 5).map((analytics) => analytics.totalSyncedMessages), 5,
           analytics.slice(0, 5).map((analytics) => new Date(analytics.day).toLocaleDateString("en-US", {
             weekday: "short",
-          })), ":envelope:",
+          })),
         )}`
       },
     },
@@ -216,7 +216,7 @@ async function getSettingsMenuBlocks(
           analytics.slice(0, 5).map((analytics) => analytics.newThreads), 5,
           analytics.slice(0, 5).map((analytics) => new Date(analytics.day).toLocaleDateString("en-US", {
             weekday: "short",
-          })), ":thread:",
+          })),
         )}`,
       },
     },
