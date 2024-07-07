@@ -60,11 +60,11 @@ export async function mirror(
     }
 
     // @ts-expect-error
-    if (message.team === pbTeam || message.files[0] && message.files[0].user_team === pbTeam) {
+    if (message.team === pbTeam || message.files && message.files[0].user_team === pbTeam) {
       team = "PB";
     }
     // @ts-expect-error
-    else if (message.team === hcTeam || message.files[0].user_team === hcTeam) {
+    else if (message.team === hcTeam || message.files && message.files[0].user_team === hcTeam) {
       team = "HC";
     } else {
       team = "Unknown";
@@ -179,8 +179,6 @@ export async function mirror(
         unfurl_links: true,
         unfurl_media: true,
       };
-
-      console.log(sendingMessage);
     }
 
     if (sendingMessage) {
