@@ -9,7 +9,7 @@ wantDebug;
 const version = require("../package.json").version;
 
 console.log(
-  "----------------------------------\nMagic Mirror Server\n----------------------------------\n"
+  "----------------------------------\nMagic Mirror Server\n----------------------------------\n",
 );
 console.log("🏗️  Starting Magic Mirror...");
 console.log("📦 Loading Slack App...");
@@ -100,25 +100,27 @@ function getEnabled() {
   return enabled;
 }
 
-(async () => {
-  enabled = await prisma.settings.findFirst({
-    where: {
-      setting: "enabled",
-    },
-  }).then((setting) => {
-    if (setting && setting.boolean) {
-      return setting.boolean
-    }
-    return true;
-  });
-})
+async () => {
+  enabled = await prisma.settings
+    .findFirst({
+      where: {
+        setting: "enabled",
+      },
+    })
+    .then((setting) => {
+      if (setting && setting.boolean) {
+        return setting.boolean;
+      }
+      return true;
+    });
+};
 
 console.log(
   "🚀 Server Started in",
   Bun.nanoseconds() / 1000000,
   "milliseconds on version:",
   version + "!",
-  "\n\n----------------------------------\n"
+  "\n\n----------------------------------\n",
 );
 
 export { HCapp, HCclient, PBapp, PBclient, prisma, getEnabled, updateEnabled };

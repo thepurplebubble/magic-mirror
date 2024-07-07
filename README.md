@@ -25,4 +25,4 @@ This will install the dependencies and run the application in development mode.
 
 ## References
 
-* [Docker's Node.js guide](https://docs.docker.com/language/nodejs/)
+- [Docker's Node.js guide](https://docs.docker.com/language/nodejs/)

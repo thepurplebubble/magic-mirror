@@ -14,7 +14,7 @@ const messageQueue = async.queue(
   async (task: ChatPostMessageRequest, callback) => {
     await limiter.schedule(() => PBclient.chat.postMessage(task));
   },
-  1
+  1,
 ); // Only one worker to ensure order and rate limit
 
 async function slog(logMessage, type) {

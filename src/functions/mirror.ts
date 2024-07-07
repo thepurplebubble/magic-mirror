@@ -48,7 +48,7 @@ export async function mirror(
     | (GenericMessageEvent & { team?: string })
     | (BotMessageEvent & { team?: string })
     | (FileShareMessageEvent & { team?: string })
-    | (ThreadBroadcastMessageEvent & { team?: string })
+    | (ThreadBroadcastMessageEvent & { team?: string }),
 ) {
   try {
     if (!getEnabled()) {
@@ -59,12 +59,18 @@ export async function mirror(
       return;
     }
 
-    // @ts-expect-error
-    if (message.team === pbTeam || message.files && message.files[0].user_team === pbTeam) {
+    if (
+      message.team === pbTeam ||
+      // @ts-expect-error
+      (message.files && message.files[0].user_team === pbTeam)
+    ) {
       team = "PB";
     }
-    // @ts-expect-error
-    else if (message.team === hcTeam || message.files && message.files[0].user_team === hcTeam) {
+    else if (
+      message.team === hcTeam ||
+      // @ts-expect-error
+      (message.files && message.files[0].user_team === hcTeam)
+    ) {
       team = "HC";
     } else {
       team = "Unknown";
@@ -117,19 +123,24 @@ export async function mirror(
 
     let sendingMessage: ChatPostMessageRequest | null = null;
 
-    const fileBlocks: AnyMessageBlock[] = [{
-      type: "section", text: {
-        type: "mrkdwn",
-        text: "\n"
-      }
-    }, { type: "divider" }, {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        // @ts-expect-error
-        text: `*Files:*\n${message.files ? message.files.map(file => `<${file.url_private}|${file.name}>`).join(", ") : ""}`,
+    const fileBlocks: AnyMessageBlock[] = [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "\n",
+        },
       },
-    }];
+      { type: "divider" },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          // @ts-expect-error
+          text: `*Files:*\n${message.files ? message.files.map((file) => `<${file.url_private}|${file.name}>`).join(", ") : ""}`,
+        },
+      },
+    ];
 
     // Check if the message is sent in a thread
     if (message.thread_ts) {
@@ -168,13 +179,16 @@ export async function mirror(
       }
 
       sendingMessage = {
-        thread_ts: messageTeam === hcTeam ? originMessage.pbTs : originMessage.hcTs,
+        thread_ts:
+          messageTeam === hcTeam ? originMessage.pbTs : originMessage.hcTs,
         channel: channelMap[messageChannel],
         username: userDisplayName,
         icon_url: userpfp,
         text: message.text,
         // @ts-expect-error
-        blocks: message.files ? [...(message.blocks ?? []), ...fileBlocks] : message.blocks,
+        blocks: message.files
+          ? [...(message.blocks ?? []), ...fileBlocks]
+          : message.blocks,
         unfurl_links: true,
         unfurl_media: true,
       };
@@ -197,7 +211,9 @@ export async function mirror(
           icon_url: userpfp,
           text: message.text,
           // @ts-expect-error
-          blocks: message.files ? [...message.blocks ?? [], ...fileBlocks] : message.blocks,
+          blocks: message.files
+            ? [...(message.blocks ?? []), ...fileBlocks]
+            : message.blocks,
           unfurl_links: true,
           unfurl_media: true,
         });
@@ -219,7 +235,9 @@ export async function mirror(
           icon_url: userpfp,
           text: message.text,
           // @ts-expect-error
-          blocks: message.files ? [...message.blocks ?? [], ...fileBlocks] : message.blocks,
+          blocks: message.files
+            ? [...(message.blocks ?? []), ...fileBlocks]
+            : message.blocks,
           unfurl_links: true,
           unfurl_media: true,
         });
@@ -231,7 +249,7 @@ export async function mirror(
             hcChannel: channelMap[messageChannel],
             pbTs: message.ts,
             pbChannel: messageChannel,
-          }
+          },
         });
       }
     }
