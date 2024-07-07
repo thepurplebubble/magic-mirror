@@ -202,7 +202,9 @@ async function getSettingsMenuBlocks(
         type: "mrkdwn",
         text: `Messages Sent Over the Last 5 Days:\n\n${barChartGenerator(
           analytics.slice(0, 5).map((analytics) => analytics.totalSyncedMessages), 5,
-          ["day 1", "day 2", "day 3", "day 4", "day 5"], ":envelope:",
+          analytics.slice(0, 5).map((analytics) => new Date(analytics.day).toLocaleDateString("en-US", {
+            weekday: "short",
+          })), ":envelope:",
         )}`
       },
     },
@@ -212,7 +214,9 @@ async function getSettingsMenuBlocks(
         type: "mrkdwn",
         text: `Threads Created Sent the Last 5 Days:\n\n${barChartGenerator(
           analytics.slice(0, 5).map((analytics) => analytics.newThreads), 5,
-          ["day 1", "day 2", "day 3", "day 4", "day 5"], ":thread:",
+          analytics.slice(0, 5).map((analytics) => new Date(analytics.day).toLocaleDateString("en-US", {
+            weekday: "short",
+          })), ":thread:",
         )}`,
       },
     },
