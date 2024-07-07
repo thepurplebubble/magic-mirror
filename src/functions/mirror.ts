@@ -8,7 +8,6 @@ import {
 } from "slack-edge";
 import { getEnabled, prisma } from "../index";
 import { blog } from "../util/Logger";
-import { get } from "http";
 
 let hcTeam = "T0266FRGM";
 let hcChannel_purplebubble = "C068D2P46TH";
