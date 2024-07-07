@@ -192,7 +192,7 @@ export async function mirror(
         unfurl_media: true,
       };
     }
-    const day = new Date().toISOString().split("T")[0];
+    const day = new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
 
     if (sendingMessage) {
       if (messageTeam === hcTeam) {
