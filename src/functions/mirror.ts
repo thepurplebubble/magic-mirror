@@ -1,4 +1,5 @@
 import {
+  AnyMessageBlock,
   BotMessageEvent,
   ChatPostMessageRequest,
   FileShareMessageEvent,
@@ -59,7 +60,7 @@ export async function mirror(
     }
 
     // @ts-expect-error
-    if (message.team === pbTeam || message.files[0].user_team === pbTeam) {
+    if (message.team === pbTeam || message.files[0] && message.files[0].user_team === pbTeam) {
       team = "PB";
     }
     // @ts-expect-error
@@ -117,6 +118,20 @@ export async function mirror(
 
     let sendingMessage: ChatPostMessageRequest | null = null;
 
+    const fileBlocks: AnyMessageBlock[] = [{
+      type: "section", text: {
+        type: "mrkdwn",
+        text: "\n"
+      }
+    }, { type: "divider" }, {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        // @ts-expect-error
+        text: `*Files:*\n${message.files ? message.files.map(file => `<${file.url_private}|${file.name}>`).join(", ") : ""}`,
+      },
+    }];
+
     // Check if the message is sent in a thread
     if (message.thread_ts) {
       console.log("Thread broadcast message received");
@@ -159,8 +174,13 @@ export async function mirror(
         username: userDisplayName,
         icon_url: userpfp,
         text: message.text,
-        blocks: message.blocks,
+        // @ts-expect-error
+        blocks: message.files ? [...message.blocks!, ...fileBlocks] : message.blocks,
+        unfurl_links: true,
+        unfurl_media: true,
       };
+
+      console.log(sendingMessage);
     }
 
     if (sendingMessage) {
@@ -179,7 +199,10 @@ export async function mirror(
           username: userDisplayName,
           icon_url: userpfp,
           text: message.text,
-          blocks: message.blocks,
+          // @ts-expect-error
+          blocks: message.files ? [...message.blocks!, ...fileBlocks] : message.blocks,
+          unfurl_links: true,
+          unfurl_media: true,
         });
 
         await prisma.message.create({
@@ -198,7 +221,10 @@ export async function mirror(
           username: userDisplayName,
           icon_url: userpfp,
           text: message.text,
-          blocks: message.blocks,
+          // @ts-expect-error
+          blocks: message.files ? [...message.blocks!, ...fileBlocks] : message.blocks,
+          unfurl_links: true,
+          unfurl_media: true,
         });
 
         await prisma.message.create({
