@@ -1,6 +1,6 @@
 {
   "name": "slack-mirror",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mirroring Slack Channels Between Workspaces",
   "main": "src/index.ts",
   "maintainers": [
