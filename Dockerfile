@@ -7,17 +7,18 @@ WORKDIR /usr/src/app
 FROM base AS build
 RUN mkdir -p /temp/prod
 COPY . /temp/prod/
-RUN cd /temp/prod && bun install && bunx prisma generate && bun run build
+RUN cd /temp/prod && bun install --production --frozen-lockfile
+RUN cd /temp/prod && bun i -g prisma
+RUN cd /temp/prod && bunx prisma generate
+RUN cd /temp/prod && bunx prisma migrate deploy
 
 # copy production build to release image
 FROM base AS release
-COPY --from=build /temp/prod/dist/mirror .
-COPY --from=build /temp/prod/prisma ./node_modules
-COPY --from=build /temp/prod/prisma ./prisma
-RUN bunx prisma db push
-RUN chown -R bun:bun . && ls -la && ls -la prisma
+COPY --from=build /temp/prod/ .
+RUN ls -la && ls -la node_modules/.prisma
+RUN chown -R bun:bun .
 
 # run the app
 USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "mirror" ]
+ENTRYPOINT [ "bun", "run", "src/index.ts" ]
