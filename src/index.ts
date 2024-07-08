@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { SlackAPIClient, SlackApp } from "slack-edge";
 
-import { mirror } from "./functions/mirror";
+import { mirror, updateMessage } from "./functions/mirror";
 import { appHome, toggleEnabled, reloadDashboard } from "./functions/appHome";
 
 const wantDebug = process.env.DEBUG === "true";
@@ -43,6 +43,25 @@ PBapp.anyMessage(async ({ payload }) => {
 });
 HCapp.anyMessage(async ({ payload }) => {
   await mirror(PBclient, HCclient, payload);
+});
+
+// listen for the message update event
+PBapp.event("message", async ({ payload, context }) => {
+  // if the message is a message update, mirror it
+  if (payload.subtype !== "message_changed") {
+    return;
+  }
+
+  await updateMessage(PBclient, HCclient, payload);
+});
+
+HCapp.event("message", async ({ payload, context }) => {
+  // if the message is a message update, mirror it
+  if (payload.subtype !== "message_changed") {
+    return;
+  }
+
+  await updateMessage(PBclient, HCclient, payload);
 });
 
 // listen for the app home open event

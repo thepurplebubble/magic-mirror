@@ -4,6 +4,7 @@ import {
   ChatPostMessageRequest,
   FileShareMessageEvent,
   GenericMessageEvent,
+  MessageChangedEvent,
   SlackAPIClient,
   ThreadBroadcastMessageEvent,
 } from "slack-edge";
@@ -20,12 +21,12 @@ let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
 
 const channelMap = {
-  // [pbChannel_pb]: hcChannel_purplebubble,
-  // [pbChannel_pbpb]: hcChannel_pbip,
+  [pbChannel_pb]: hcChannel_purplebubble,
+  [pbChannel_pbpb]: hcChannel_pbip,
   [pbmirrorTest]: hcmirrorTest,
   [hcmirrorTest]: pbmirrorTest,
-  // [hcChannel_purplebubble]: pbChannel_pb,
-  // [hcChannel_pbip]: pbChannel_pbpb,
+  [hcChannel_purplebubble]: pbChannel_pb,
+  [hcChannel_pbip]: pbChannel_pbpb,
 };
 
 function hasChannel(channel: string): boolean {
@@ -287,5 +288,78 @@ export async function mirror(
     }
   } catch (error) {
     blog(`Error responding to message: ${error}`, "error");
+  }
+}
+
+export async function updateMessage(
+  pbClient: SlackAPIClient,
+  hcClient: SlackAPIClient,
+  message: MessageChangedEvent,
+) {
+  try {
+    if (!getEnabled()) {
+      return;
+    }
+
+    if (!hasChannel(message.channel)) {
+      return;
+    }
+
+    if (
+      // @ts-expect-error
+      message.message.team! === pbTeam
+    ) {
+      team = "PB";
+    } else if (
+      // @ts-expect-error
+      message.message.team! === hcTeam
+    ) {
+      team = "HC";
+    } else {
+      team = "Unknown";
+    }
+
+    if (message.message.subtype === "bot_message") {
+      return;
+    }
+
+    if (!channelMap[message.channel]) {
+      return;
+    }
+
+    blog(`Message received from team ${team} to be updated`, "info");
+
+    // @ts-expect-error
+    let messageTeam = message.message.team!
+    let messageChannel = message.channel!;
+
+    const dbMessage = await prisma.message.findFirst({
+      where: {
+        hcTs: message.message.ts,
+        hcChannel: messageChannel,
+      },
+    });
+
+    if (messageTeam === hcTeam) {
+      await pbClient.chat.update({
+        channel: channelMap[messageChannel],
+        ts: dbMessage!.pbTs,
+        // @ts-expect-error
+        text: message.message.text,
+        // @ts-expect-error
+        blocks: message.message.blocks,
+      });
+    } else if (messageTeam === pbTeam) {
+      await hcClient.chat.update({
+        channel: channelMap[messageChannel],
+        ts: dbMessage!.hcTs,
+        // @ts-expect-error
+        text: message.message.text,
+        // @ts-expect-error
+        blocks: message.message.blocks,
+      });
+    }
+  } catch (error) {
+    blog(`Error updating message: ${error}`, "error");
   }
 }
