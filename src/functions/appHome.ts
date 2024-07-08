@@ -111,6 +111,54 @@ export async function toggleEnabled(
   }
 }
 
+export async function reloadDashboard(
+  event: BlockAction<ButtonAction>,
+  context: PreAuthorizeSlackAppContext & {
+    client: SlackAPIClient;
+    botToken: string;
+    botId: string;
+    botUserId: string;
+    userToken?: string;
+    authorizeResult: AuthorizeResult;
+  },
+) {
+  // check if its opening the home tab
+  // get info about the user
+  const user = await context.client.users.info({
+    user: event.user.id,
+  });
+
+  // check if the user is authorized
+  if (
+    user.user?.is_owner ||
+    user.user?.is_admin ||
+    process.env.ADMINS?.split(",").includes(user.user?.id!)
+  ) {
+    console.log("📥 User is authorized to reload the settings page", user.user!.name);
+
+    // update the home tab
+    await context.client.views.publish({
+      user_id: event.user.id,
+      view: {
+        type: "home",
+        blocks: await getSettingsMenuBlocks(true, event.user.id),
+      },
+    });
+    return;
+  } else {
+    console.log("📥 User is not authorized", user.user!.name);
+    // update the home tab
+    await context.client.views.publish({
+      user_id: event.user.id,
+      view: {
+        type: "home",
+        blocks: await getSettingsMenuBlocks(false, event.user.id),
+      },
+    });
+    return;
+  }
+}
+
 async function getSettingsMenuBlocks(
   allowed: boolean,
   user: string,
@@ -234,5 +282,22 @@ async function getSettingsMenuBlocks(
           .join(" ")}`,
       },
     },
+    {
+      type: "divider",
+    },
+    {
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "Reload Dashboard",
+            emoji: true,
+          },
+          action_id: "reloadDashboard",
+        },
+      ],
+    }
   ];
 }
