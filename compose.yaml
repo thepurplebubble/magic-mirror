@@ -2,7 +2,7 @@ name: magic-mirror
 services:
   server:
     ports:
-      - 4221:3000
+      - 3000:3000
     image: ghcr.io/thepurplebubble/magic-mirror:latest
     restart: unless-stopped
     environment:
