@@ -22,4 +22,5 @@ services:
       - HC_SLACK_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       - HC_SLACK_CLIENT_ID=xxxxxxxxxxxxxxxxxxxx.xxxxxxxxxxxxxxx
       - HC_SLACK_APP_ID=A07AK8PC5FG
+      - ADMINS=U0xxxxxxxxx # comma separated list of slack user IDs
     init: true
