@@ -21,4 +21,4 @@ RUN bunx prisma db push
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-CMD [ "bun", "run", "index.ts" ]
+CMD [ "bun", "run", "src/index.ts" ]
