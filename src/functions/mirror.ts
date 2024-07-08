@@ -305,6 +305,11 @@ export async function updateMessage(
       return;
     }
 
+    // @ts-expect-error
+    if (message.previous_message.thread_ts) {
+      return;
+    }
+
     if (
       // @ts-expect-error
       message.message.team! === pbTeam
