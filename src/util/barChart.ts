@@ -28,7 +28,6 @@ export default function barChartGenerator(data: number[], height: number, labels
     }
     barChartStringArray.push(barChartString);
 
-    console.log(data)
     for (let i = 0; i < height + 1; i++) {
         let barChartString = "";
         for (let j = 0; j < data.length; j++) {
