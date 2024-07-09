@@ -11,22 +11,45 @@ import {
 import { getEnabled, prisma } from "../index";
 import { blog } from "../util/Logger";
 
+let hcmirrorTest = "C069N64PW4A";
+let pbmirrorTest = "C07ASSJGE2G";
+
+// ~~~~~~~~~~~~~~~~
+
 let hcTeam = "T0266FRGM";
 let hcChannel_purplebubble = "C068D2P46TH";
 let hcChannel_pbip = "C06AXC7B0QN";
-let hcmirrorTest = "C069N64PW4A";
-let pbmirrorTest = "C07ASSJGE2G";
+let hcChannel_pbDesign = "C07B2MTHCDU";
+
 let pbTeam = "T07986PHP2R";
 let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
+let pbChannel_design = "C07B617MLU9";
+
+const channels = [
+  hcmirrorTest,
+  pbmirrorTest,
+  // ~~~~~~~~~~~~~~~
+  // hcChannel_pbip,
+  // hcChannel_purplebubble,
+  // hcChannel_pbDesign,
+  // pbChannel_pb,
+  // pbChannel_pbpb,
+  // pbChannel_design,
+];
 
 const channelMap = {
-  [pbChannel_pb]: hcChannel_purplebubble,
-  [pbChannel_pbpb]: hcChannel_pbip,
   [pbmirrorTest]: hcmirrorTest,
   [hcmirrorTest]: pbmirrorTest,
+
+  [pbChannel_pb]: hcChannel_purplebubble,
   [hcChannel_purplebubble]: pbChannel_pb,
+
+  [pbChannel_pbpb]: hcChannel_pbip,
   [hcChannel_pbip]: pbChannel_pbpb,
+
+  [pbChannel_design]: hcChannel_pbDesign,
+  [hcChannel_pbDesign]: pbChannel_design,
 };
 
 function hasChannel(channel: string): boolean {
@@ -49,7 +72,7 @@ export async function mirror(
     | (GenericMessageEvent & { team?: string })
     | (BotMessageEvent & { team?: string })
     | (FileShareMessageEvent & { team?: string })
-    | (ThreadBroadcastMessageEvent & { team?: string }),
+    | (ThreadBroadcastMessageEvent & { team?: string })
 ) {
   try {
     if (!getEnabled()) {
@@ -137,7 +160,13 @@ export async function mirror(
         text: {
           type: "mrkdwn",
           // @ts-expect-error
-          text: `*Files:*\n${message.files ? message.files.map((file) => `<${file.url_private}|${file.name}>`).join(", ") : ""}`,
+          text: `*Files:*\n${
+            message.files
+              ? message.files
+                  .map((file) => `<${file.url_private}|${file.name}>`)
+                  .join(", ")
+              : ""
+          }`,
         },
       },
     ];
@@ -294,7 +323,7 @@ export async function mirror(
 export async function updateMessage(
   pbClient: SlackAPIClient,
   hcClient: SlackAPIClient,
-  message: MessageChangedEvent,
+  message: MessageChangedEvent
 ) {
   try {
     if (!getEnabled()) {
@@ -335,7 +364,7 @@ export async function updateMessage(
     blog(`Message received from team ${team} to be updated`, "info");
 
     // @ts-expect-error
-    let messageTeam = message.message.team!
+    let messageTeam = message.message.team!;
     let messageChannel = message.channel!;
 
     const dbMessage = await prisma.message.findFirst({

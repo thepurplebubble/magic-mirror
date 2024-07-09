@@ -17,9 +17,17 @@ const messageQueue = async.queue(
   1,
 ); // Only one worker to ensure order and rate limit
 
-async function slog(logMessage, type) {
+async function slog(
+  logMessage,
+  type,
+  location?: {
+    thread_ts?: string;
+    channel: string;
+  }
+) {
   const message: ChatPostMessageRequest = {
-    channel: process.env.SLACK_LOG_CHANNEL!,
+    channel: location?.channel || process.env.SLACK_LOG_CHANNEL!,
+    thread_ts: location?.thread_ts,
     text: logMessage,
     blocks: [
       {
