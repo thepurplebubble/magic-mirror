@@ -9,7 +9,7 @@ import {
   ThreadBroadcastMessageEvent,
 } from "slack-edge";
 import { getEnabled, prisma } from "../index";
-import { blog } from "../util/Logger";
+import { blog, slog } from "../util/Logger";
 
 let hcmirrorTest = "C069N64PW4A";
 let pbmirrorTest = "C07ASSJGE2G";
@@ -26,7 +26,7 @@ let pbChannel_pb = "C079B7H3AKD";
 let pbChannel_pbpb = "C078WH9B44F";
 let pbChannel_design = "C07B617MLU9";
 
-const channels = [
+const enabledChannels = [
   hcmirrorTest,
   pbmirrorTest,
   // ~~~~~~~~~~~~~~~
@@ -76,11 +76,18 @@ export async function mirror(
 ) {
   try {
     if (!getEnabled()) {
-      return;
+      return slog("Mirror is not enabled", "info");
     }
 
     if (!hasChannel(message.channel)) {
-      return;
+      return slog(`Channel not mapped: ${message.channel}`, "info");
+    }
+
+    if (!enabledChannels.includes(message.channel)) {
+      return slog(
+        `Channel not in the list of enabled channels: ${message.channel}`,
+        "info"
+      );
     }
 
     if (
@@ -159,10 +166,11 @@ export async function mirror(
         type: "section",
         text: {
           type: "mrkdwn",
-          // @ts-expect-error
           text: `*Files:*\n${
+            // @ts-expect-error
             message.files
-              ? message.files
+              ? // @ts-expect-error
+                message.files
                   .map((file) => `<${file.url_private}|${file.name}>`)
                   .join(", ")
               : ""
