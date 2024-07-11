@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { SlackAPIClient, SlackApp } from "slack-edge";
 
 import { appHome, reloadDashboard, toggleEnabled } from "./functions/appHome";
-import { mirror, updateMessage } from "./functions/mirror";
+import { deleteMessage, mirror, updateMessage } from "./functions/mirror";
 
 const wantDebug = process.env.DEBUG === "true";
 wantDebug;
@@ -52,6 +52,7 @@ PBapp.event("message", async ({ payload, context }) => {
       await updateMessage(PBclient, HCclient, payload);
       break;
     case "message_deleted":
+      await deleteMessage(PBclient, HCclient, payload);
       break;
     default:
       return;
@@ -64,6 +65,7 @@ HCapp.event("message", async ({ payload, context }) => {
       await updateMessage(PBclient, HCclient, payload);
       break;
     case "message_deleted":
+      await deleteMessage(PBclient, HCclient, payload);
       break;
     default:
       return;

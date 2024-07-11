@@ -5,54 +5,17 @@ import {
   FileShareMessageEvent,
   GenericMessageEvent,
   MessageChangedEvent,
+  MessageDeletedEvent,
   SlackAPIClient,
   ThreadBroadcastMessageEvent,
 } from "slack-edge";
+import { channelMap, enabledChannels, hcTeam, pbTeam } from "../config";
 import { getEnabled, prisma } from "../index";
 import { blog, slog } from "../util/Logger";
 
-let hcmirrorTest = "C069N64PW4A";
-let pbmirrorTest = "C07ASSJGE2G";
+let team: string;
 
-// ~~~~~~~~~~~~~~~~
-
-let hcTeam = "T0266FRGM";
-let hcChannel_purplebubble = "C068D2P46TH";
-let hcChannel_pbip = "C06AXC7B0QN";
-let hcChannel_pbDesign = "C07B2MTHCDU";
-
-let pbTeam = "T07986PHP2R";
-let pbChannel_pb = "C079B7H3AKD";
-let pbChannel_pbpb = "C078WH9B44F";
-let pbChannel_design = "C07B617MLU9";
-
-const enabledChannels = [
-  hcmirrorTest,
-  pbmirrorTest,
-  // ~~~~~~~~~~~~~~~
-  // hcChannel_pbip,
-  // hcChannel_purplebubble,
-  // hcChannel_pbDesign,
-  // pbChannel_pb,
-  // pbChannel_pbpb,
-  // pbChannel_design,
-];
-
-const channelMap = {
-  [pbmirrorTest]: hcmirrorTest,
-  [hcmirrorTest]: pbmirrorTest,
-
-  [pbChannel_pb]: hcChannel_purplebubble,
-  [hcChannel_purplebubble]: pbChannel_pb,
-
-  [pbChannel_pbpb]: hcChannel_pbip,
-  [hcChannel_pbip]: pbChannel_pbpb,
-
-  [pbChannel_design]: hcChannel_pbDesign,
-  [hcChannel_pbDesign]: pbChannel_design,
-};
-
-function hasChannel(channel: string): boolean {
+export function hasChannel(channel: string): boolean {
   // check all keys and values in the channelMap for the channel
   for (const key in channelMap) {
     if (channelMap[key] === channel || key === channel) {
@@ -62,8 +25,6 @@ function hasChannel(channel: string): boolean {
 
   return false;
 }
-
-let team;
 
 export async function mirror(
   pbClient: SlackAPIClient,
@@ -381,6 +342,17 @@ export async function updateMessage(
       },
     });
 
+    await prisma.message.update({
+      where: {
+        hcTs: message.message.ts,
+        hcChannel: messageChannel,
+      },
+      data: {
+        // @ts-expect-error
+        updated: true,
+      },
+    });
+
     if (messageTeam === hcTeam) {
       await pbClient.chat.update({
         channel: channelMap[messageChannel],
@@ -402,5 +374,86 @@ export async function updateMessage(
     }
   } catch (error) {
     blog(`Error updating message: ${error}`, "error");
+  }
+}
+
+export async function deleteMessage(
+  pbClient: SlackAPIClient,
+  hcClient: SlackAPIClient,
+  message: MessageDeletedEvent
+) {
+  try {
+    if (!getEnabled()) {
+      return;
+    }
+
+    if (!hasChannel(message.channel)) {
+      return;
+    }
+
+    // @ts-expect-error
+    if (message.previous_message.thread_ts) {
+      return;
+    }
+
+    if (
+      // @ts-expect-error
+      message.previous_message.team === pbTeam
+    ) {
+      team = "PB";
+    } else if (
+      // @ts-expect-error
+      message.previous_message.team === hcTeam
+    ) {
+      team = "HC";
+    } else {
+      team = "Unknown";
+    }
+
+    if (message.previous_message.subtype === "bot_message") {
+      return;
+    }
+
+    if (!channelMap[message.channel]) {
+      return;
+    }
+
+    blog(`Message received from team ${team} to be deleted`, "info");
+
+    // @ts-expect-error
+    let messageTeam = message.previous_message.team;
+    let messageChannel = message.channel;
+
+    const dbMessage = await prisma.message.findFirst({
+      where: {
+        hcTs: message.previous_message.ts,
+        hcChannel: messageChannel,
+      },
+    });
+
+    await prisma.message.update({
+      where: {
+        hcTs: message.previous_message.ts,
+        hcChannel: messageChannel,
+      },
+      data: {
+        // @ts-expect-error
+        deleted: true,
+      },
+    });
+
+    if (messageTeam === hcTeam) {
+      await pbClient.chat.delete({
+        channel: channelMap[messageChannel],
+        ts: dbMessage!.pbTs,
+      });
+    } else if (messageTeam === pbTeam) {
+      await hcClient.chat.delete({
+        channel: channelMap[messageChannel],
+        ts: dbMessage!.hcTs,
+      });
+    }
+  } catch (error) {
+    blog(`Error deleting message: ${error}`, "error");
   }
 }
