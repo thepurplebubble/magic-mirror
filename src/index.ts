@@ -1,15 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import { SlackAPIClient, SlackApp } from "slack-edge";
 
+import { appHome, reloadDashboard, toggleEnabled } from "./functions/appHome";
 import { mirror, updateMessage } from "./functions/mirror";
-import { appHome, toggleEnabled, reloadDashboard } from "./functions/appHome";
 
 const wantDebug = process.env.DEBUG === "true";
 wantDebug;
 const version = require("../package.json").version;
 
 console.log(
-  "----------------------------------\nMagic Mirror Server\n----------------------------------\n",
+  "----------------------------------\nMagic Mirror Server\n----------------------------------\n"
 );
 console.log("🏗️  Starting Magic Mirror...");
 console.log("📦 Loading Slack App...");
@@ -47,21 +47,27 @@ HCapp.anyMessage(async ({ payload }) => {
 
 // listen for the message update event
 PBapp.event("message", async ({ payload, context }) => {
-  // if the message is a message update, mirror it
-  if (payload.subtype !== "message_changed") {
-    return;
+  switch (payload.subtype) {
+    case "message_changed":
+      await updateMessage(PBclient, HCclient, payload);
+      break;
+    case "message_deleted":
+      break;
+    default:
+      return;
   }
-
-  await updateMessage(PBclient, HCclient, payload);
 });
 
 HCapp.event("message", async ({ payload, context }) => {
-  // if the message is a message update, mirror it
-  if (payload.subtype !== "message_changed") {
-    return;
+  switch (payload.subtype) {
+    case "message_changed":
+      await updateMessage(PBclient, HCclient, payload);
+      break;
+    case "message_deleted":
+      break;
+    default:
+      return;
   }
-
-  await updateMessage(PBclient, HCclient, payload);
 });
 
 // listen for the app home open event
@@ -149,10 +155,10 @@ console.log(
   Bun.nanoseconds() / 1000000,
   "milliseconds on version:",
   version + "!",
-  "\n\n----------------------------------\n",
+  "\n\n----------------------------------\n"
 );
 
-export { HCapp, HCclient, PBapp, PBclient, prisma, getEnabled, updateEnabled };
+export { HCapp, HCclient, PBapp, PBclient, getEnabled, prisma, updateEnabled };
 
 export default {
   port: 3000,
