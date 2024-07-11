@@ -211,7 +211,6 @@ export async function mirror(
       }
 
       if (!originMessage) {
-        blog(`Could not find origin message for thread ${threadTs}`, "error");
         return;
       }
 
