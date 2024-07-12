@@ -23,8 +23,8 @@ model User {
   slackId     String    @unique
   name        String
   displayName String
-  email       String
   image       String
+  team        String
   messages    Message[]
 }
 

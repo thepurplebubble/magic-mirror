@@ -114,10 +114,10 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
-    console.log("User profile:" + JSON.stringify(profile));
+    console.log("User profile: ", profile);
 
     // @ts-expect-error
-    prisma.users.upsert({
+    prisma.user.upsert({
       where: {
         slackId: message.user,
       },
@@ -125,8 +125,8 @@ export async function mirror(
         name: profile.real_name,
         displayName: userDisplayName,
         pfp: userpfp,
-        email: profile.email,
         image: profile.image_512,
+        team: messageTeam,
       },
     });
 
@@ -242,8 +242,19 @@ export async function mirror(
 
         await prisma.message.create({
           data: {
-            user: message.user,
             // @ts-expect-error
+            user: {
+              connectOrCreate: {
+                where: { slackId: message.user },
+                create: {
+                  slackId: message.user,
+                  name: userProfile.profile.real_name,
+                  displayName: userDisplayName,
+                  image: userpfp,
+                  team: messageTeam,
+                },
+              },
+            },
             originTs: message.ts,
             originChannel: messageChannel,
             originTeam: messageTeam,
@@ -269,8 +280,19 @@ export async function mirror(
 
         await prisma.message.create({
           data: {
-            user: message.user,
             // @ts-expect-error
+            user: {
+              connectOrCreate: {
+                where: { slackId: message.user },
+                create: {
+                  slackId: message.user,
+                  name: userProfile.profile.real_name,
+                  displayName: userDisplayName,
+                  image: userpfp,
+                  team: messageTeam,
+                },
+              },
+            },
             originTs: message.ts,
             originChannel: messageChannel,
             originTeam: messageTeam,
