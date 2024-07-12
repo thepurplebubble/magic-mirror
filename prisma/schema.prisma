@@ -19,8 +19,7 @@ enum reactionType {
 }
 
 model User {
-  id          String    @id @unique @default(uuid())
-  slackId     String    @unique
+  id          String    @id @unique
   name        String
   displayName String
   image       String
@@ -30,8 +29,8 @@ model User {
 
 // todo ~ add message text to the db (and updates on updates)
 model Message {
-  id            String     @id @unique
-  user          User       @relation(fields: [userId], references: [slackId])
+  id            String     @id @unique @default(uuid())
+  user          User       @relation(fields: [userId], references: [id])
   userId        String // the slack user id who sent the message
   originTs      String     @unique // the ts from the message in the server the message was sent
   originChannel String // the channel id where the message was sent
@@ -45,7 +44,7 @@ model Message {
 }
 
 model Reaction {
-  id        String       @id @unique @default(uuid())
+  id        String       @id @unique
   type      reactionType
   user      String // the slack user id who reacted
   reaction  String // the reaction

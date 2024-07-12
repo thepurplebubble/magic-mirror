@@ -119,7 +119,7 @@ export async function mirror(
     // @ts-expect-error
     prisma.user.upsert({
       where: {
-        slackId: message.user,
+        id: message.user,
       },
       update: {
         name: profile.real_name,
@@ -240,19 +240,32 @@ export async function mirror(
           unfurl_media: true,
         });
 
+        // @ts-expect-error
+        let dbUser = await prisma.user.findFirst({
+          where: {
+            id: message.user,
+          },
+        });
+
+        if (!dbUser) {
+          // @ts-expect-error
+          await prisma.user.create({
+            data: {
+              id: message.user,
+              name: profile.real_name,
+              displayName: userDisplayName,
+              image: userpfp,
+              team: messageTeam,
+            },
+          });
+        }
+
         await prisma.message.create({
           data: {
             // @ts-expect-error
             user: {
-              connectOrCreate: {
-                where: { slackId: message.user },
-                create: {
-                  slackId: message.user,
-                  name: userProfile.profile.real_name,
-                  displayName: userDisplayName,
-                  image: userpfp,
-                  team: messageTeam,
-                },
+              connect: {
+                id: message.user,
               },
             },
             originTs: message.ts,
@@ -283,9 +296,9 @@ export async function mirror(
             // @ts-expect-error
             user: {
               connectOrCreate: {
-                where: { slackId: message.user },
+                where: { id: message.user },
                 create: {
-                  slackId: message.user,
+                  id: message.user,
                   name: userProfile.profile.real_name,
                   displayName: userDisplayName,
                   image: userpfp,
