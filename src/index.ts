@@ -72,6 +72,14 @@ HCapp.event("message", async ({ payload, context }) => {
   }
 });
 
+PBapp.event("reaction_added", async ({ payload, context }) => {});
+
+HCapp.event("reaction_added", async ({ payload, context }) => {});
+
+PBapp.event("reaction_added", async ({ payload, context }) => {});
+
+HCapp.event("reaction_added", async ({ payload, context }) => {});
+
 // listen for the app home open event
 PBapp.event("app_home_opened", async ({ payload, context }) => {
   await appHome(payload, context);

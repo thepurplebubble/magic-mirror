@@ -6,6 +6,8 @@ import {
   GenericMessageEvent,
   MessageChangedEvent,
   MessageDeletedEvent,
+  ReactionAddedEvent,
+  ReactionRemovedEvent,
   SlackAPIClient,
   ThreadBroadcastMessageEvent,
 } from "slack-edge";
@@ -455,5 +457,31 @@ export async function deleteMessage(
     }
   } catch (error) {
     blog(`Error deleting message: ${error}`, "error");
+  }
+}
+
+export async function messageReact(
+  pbClient: SlackAPIClient,
+  hcClient: SlackAPIClient,
+  event: ReactionAddedEvent
+) {
+  try {
+    console.log("Reaction added event received");
+    console.log(event);
+  } catch (error) {
+    blog(`Error responding to reaction: ${error}`, "error");
+  }
+}
+
+export async function messageUnreact(
+  pbClient: SlackAPIClient,
+  hcClient: SlackAPIClient,
+  event: ReactionRemovedEvent
+) {
+  try {
+    console.log("Reaction removed event received");
+    console.log(event);
+  } catch (error) {
+    blog(`Error responding to reaction: ${error}`, "error");
   }
 }
