@@ -9,18 +9,39 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./data/dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum reactionType {
+  REMOVED
+  ADDED
 }
 
 model Message {
+  id        String  @id @default(uuid())
   user      String // the slack user id who sent the message
-  hcTs      String  @id @unique // the ts from the message in the server the message was sent
+  hcTs      String  @unique // the ts from the message in the server the message was sent
   hcChannel String // the channel id where the message was sent
   pbTs      String  @unique // the ts from the message in the server the message was mirrored
   pbChannel String // the channel id where the message was mirrored
   deleted   Boolean @default(false) // if the message was deleted
   updated   Boolean @default(false) // if the message was updated
+  // reactions Reaction[]
+}
+
+model Reaction {
+  id       String       @id @default(uuid())
+  type     reactionType
+  user     String // the slack user id who reacted
+  reaction String // the reaction
+
+  // message   Message @relation(fields: [messageId], references: [id])
+  // messageId String
+  // user      String // the slack user id who reacted
+  // reaction  String // the reaction
+  // Message   Message? @relation(fields: [messageId], references: [id])
+  // messageId String?
 }
 
 // settings for the app

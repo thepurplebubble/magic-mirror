@@ -2,7 +2,13 @@ import { PrismaClient } from "@prisma/client";
 import { SlackAPIClient, SlackApp } from "slack-edge";
 
 import { appHome, reloadDashboard, toggleEnabled } from "./functions/appHome";
-import { deleteMessage, mirror, updateMessage } from "./functions/mirror";
+import {
+  deleteMessage,
+  messageReact,
+  messageUnreact,
+  mirror,
+  updateMessage,
+} from "./functions/mirror";
 
 const wantDebug = process.env.DEBUG === "true";
 wantDebug;
@@ -72,13 +78,21 @@ HCapp.event("message", async ({ payload, context }) => {
   }
 });
 
-PBapp.event("reaction_added", async ({ payload, context }) => {});
+PBapp.event("reaction_added", async ({ payload, context }) => {
+  messageReact(PBclient, HCclient, payload);
+});
 
-HCapp.event("reaction_added", async ({ payload, context }) => {});
+HCapp.event("reaction_added", async ({ payload, context }) => {
+  messageReact(PBclient, HCclient, payload);
+});
 
-PBapp.event("reaction_added", async ({ payload, context }) => {});
+PBapp.event("reaction_removed", async ({ payload, context }) => {
+  messageUnreact(PBclient, HCclient, payload);
+});
 
-HCapp.event("reaction_added", async ({ payload, context }) => {});
+HCapp.event("reaction_removed", async ({ payload, context }) => {
+  messageUnreact(PBclient, HCclient, payload);
+});
 
 // listen for the app home open event
 PBapp.event("app_home_opened", async ({ payload, context }) => {
