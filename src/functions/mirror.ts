@@ -510,6 +510,67 @@ export async function messageReact(
   try {
     console.log("Reaction added event received");
     console.log(event);
+
+    if (!getEnabled()) {
+      return;
+    }
+
+    let dbMessage = await prisma.message.findFirst({
+      where: {
+        // @ts-expect-error
+        originTs: event.item.ts,
+        originChannel: event.item.channel,
+      },
+    });
+
+    // let dbReaction = await prisma.reaction.upsert({
+    //   where: {
+    //     // @ts-expect-error
+    //     id: dbMessage.id,
+    //     reaction: event.reaction,
+    //   },
+    //   create: {
+    //     // @ts-expect-error
+    //     id: dbMessage.id,
+    //     reaction: event.reaction,
+    //     count: 1,
+    //   },
+    //   update: {},
+    // });
+
+    // @ts-expect-error
+    await prisma.reaction.upsert({
+      where: {
+        // @ts-expect-error
+        messageId: dbMessage.id,
+      },
+      update: {
+        count: {
+          increment: 1,
+        },
+      },
+      create: {
+        // @ts-expect-error
+        id: dbMessage.id,
+        reaction: event.reaction,
+        count: 1,
+      },
+    });
+
+    // react to the message in the other channel
+    if (event.item.channel === pbTeam) {
+      await hcClient.reactions.add({
+        name: event.reaction,
+        channel: channelMap[event.item.channel],
+        timestamp: event.item.ts,
+      });
+    } else if (event.item.channel === hcTeam) {
+      await pbClient.reactions.add({
+        name: event.reaction,
+        channel: channelMap[event.item.channel],
+        timestamp: event.item.ts,
+      });
+    }
   } catch (error) {
     blog(`Error responding to reaction: ${error}`, "error");
   }
