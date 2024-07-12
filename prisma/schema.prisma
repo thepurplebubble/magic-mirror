@@ -18,20 +18,33 @@ enum reactionType {
   ADDED
 }
 
+model User {
+  id          String    @id @unique @default(uuid())
+  slackId     String    @unique
+  name        String
+  displayName String
+  email       String
+  image       String
+  messages    Message[]
+}
+
 model Message {
-  id        String  @id @default(uuid())
-  user      String // the slack user id who sent the message
-  hcTs      String  @unique // the ts from the message in the server the message was sent
-  hcChannel String // the channel id where the message was sent
-  pbTs      String  @unique // the ts from the message in the server the message was mirrored
-  pbChannel String // the channel id where the message was mirrored
-  deleted   Boolean @default(false) // if the message was deleted
-  updated   Boolean @default(false) // if the message was updated
+  id            String  @id @unique @default(uuid())
+  user          User    @relation(fields: [userId], references: [slackId])
+  userId        String // the slack user id who sent the message
+  originTs      String  @unique // the ts from the message in the server the message was sent
+  originChannel String // the channel id where the message was sent
+  originTeam    String // the team id where the message was sent
+  mirrorTs      String  @unique // the ts from the message in the server the message was mirrored
+  mirrorChannel String // the channel id where the message was mirrored
+  mirrorTeam    String // the team id where the message was mirrored
+  deleted       Boolean @default(false) // if the message was deleted
+  updated       Boolean @default(false) // if the message was updated
   // reactions Reaction[]
 }
 
 model Reaction {
-  id       String       @id @default(uuid())
+  id       String       @id @unique @default(uuid())
   type     reactionType
   user     String // the slack user id who reacted
   reaction String // the reaction

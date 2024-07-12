@@ -114,6 +114,22 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
+    console.log("User profile:" + JSON.stringify(profile));
+
+    // @ts-expect-error
+    prisma.users.upsert({
+      where: {
+        slackId: message.user,
+      },
+      update: {
+        name: profile.real_name,
+        displayName: userDisplayName,
+        pfp: userpfp,
+        email: profile.email,
+        image: profile.image_512,
+      },
+    });
+
     let sendingMessage: ChatPostMessageRequest | null = null;
 
     const fileBlocks: AnyMessageBlock[] = [
@@ -149,37 +165,27 @@ export async function mirror(
       let threadTs = message.thread_ts;
       let originMessage: {
         user: string;
-        hcTs: string;
-        hcChannel: string;
-        pbTs: string;
-        pbChannel: string;
+        originTs: string;
+        originChannel: string;
+        mirrorTs: string;
+        mirrorChannel: string;
       } | null = null;
 
-      if (messageTeam === hcTeam) {
-        // Find the origin message
-        originMessage = await prisma.message.findFirst({
-          where: {
-            hcTs: threadTs,
-            hcChannel: messageChannel,
-          },
-        });
-      } else {
-        // Find the origin message
-        originMessage = await prisma.message.findFirst({
-          where: {
-            pbTs: threadTs,
-            pbChannel: messageChannel,
-          },
-        });
-      }
+      // @ts-expect-error
+      originMessage = await prisma.message.findFirst({
+        where: {
+          // @ts-expect-error
+          originTs: threadTs,
+          originChannel: messageChannel,
+        },
+      });
 
       if (!originMessage) {
         return;
       }
 
       sendingMessage = {
-        thread_ts:
-          messageTeam === hcTeam ? originMessage.pbTs : originMessage.hcTs,
+        thread_ts: originMessage.originTs,
         channel: channelMap[messageChannel],
         username: userDisplayName,
         icon_url: userpfp,
@@ -237,10 +243,13 @@ export async function mirror(
         await prisma.message.create({
           data: {
             user: message.user,
-            hcTs: message.ts,
-            hcChannel: messageChannel,
-            pbTs: newMessage.ts!,
-            pbChannel: channelMap[messageChannel],
+            // @ts-expect-error
+            originTs: message.ts,
+            originChannel: messageChannel,
+            originTeam: messageTeam,
+            mirrorTs: newMessage.ts!,
+            mirrorChannel: channelMap[messageChannel],
+            mirrorTeam: pbTeam,
           },
         });
       } else if (messageTeam === pbTeam) {
@@ -261,10 +270,13 @@ export async function mirror(
         await prisma.message.create({
           data: {
             user: message.user,
-            hcTs: newMessage.ts!,
-            hcChannel: channelMap[messageChannel],
-            pbTs: message.ts,
-            pbChannel: messageChannel,
+            // @ts-expect-error
+            originTs: message.ts,
+            originChannel: messageChannel,
+            originTeam: messageTeam,
+            mirrorTs: newMessage.ts!,
+            mirrorChannel: channelMap[messageChannel],
+            mirrorTeam: hcTeam,
           },
         });
       }
@@ -339,15 +351,17 @@ export async function updateMessage(
 
     const dbMessage = await prisma.message.findFirst({
       where: {
-        hcTs: message.message.ts,
-        hcChannel: messageChannel,
+        // @ts-expect-error
+        originChannel: messageChannel,
+        originTs: message.message.ts,
       },
     });
 
     await prisma.message.update({
       where: {
-        hcTs: message.message.ts,
-        hcChannel: messageChannel,
+        // @ts-expect-error
+        originChannel: messageChannel,
+        originTs: message.message.ts,
       },
       data: {
         // @ts-expect-error
@@ -358,7 +372,8 @@ export async function updateMessage(
     if (messageTeam === hcTeam) {
       await pbClient.chat.update({
         channel: channelMap[messageChannel],
-        ts: dbMessage!.pbTs,
+        // @ts-expect-error
+        ts: dbMessage!.originTs,
         // @ts-expect-error
         text: message.message.text,
         // @ts-expect-error
@@ -367,7 +382,8 @@ export async function updateMessage(
     } else if (messageTeam === pbTeam) {
       await hcClient.chat.update({
         channel: channelMap[messageChannel],
-        ts: dbMessage!.hcTs,
+        // @ts-expect-error
+        ts: dbMessage!.originTs,
         // @ts-expect-error
         text: message.message.text,
         // @ts-expect-error
@@ -428,15 +444,17 @@ export async function deleteMessage(
 
     const dbMessage = await prisma.message.findFirst({
       where: {
-        hcTs: message.previous_message.ts,
-        hcChannel: messageChannel,
+        // @ts-expect-error
+        originTs: message.previous_message.ts,
+        originChannel: messageChannel,
       },
     });
 
     await prisma.message.update({
       where: {
-        hcTs: message.previous_message.ts,
-        hcChannel: messageChannel,
+        // @ts-expect-error
+        originTs: message.previous_message.ts,
+        originChannel: messageChannel,
       },
       data: {
         // @ts-expect-error
@@ -447,12 +465,14 @@ export async function deleteMessage(
     if (messageTeam === hcTeam) {
       await pbClient.chat.delete({
         channel: channelMap[messageChannel],
-        ts: dbMessage!.pbTs,
+        // @ts-expect-error
+        ts: dbMessage!.originTs,
       });
     } else if (messageTeam === pbTeam) {
       await hcClient.chat.delete({
         channel: channelMap[messageChannel],
-        ts: dbMessage!.hcTs,
+        // @ts-expect-error
+        ts: dbMessage!.originTs,
       });
     }
   } catch (error) {
