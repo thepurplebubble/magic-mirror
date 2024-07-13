@@ -114,21 +114,25 @@ export async function mirror(
     let userpfp = profile.image_512!;
     let userDisplayName = profile.display_name!;
 
-    console.log("User profile: ", profile);
+    // console.log("User profile: ", profile);
 
-    // @ts-expect-error
-    prisma.user.upsert({
+    let dbUser = await prisma.user.findFirst({
       where: {
         id: message.user,
       },
-      update: {
-        name: profile.real_name,
-        displayName: userDisplayName,
-        pfp: userpfp,
-        image: profile.image_512,
-        team: messageTeam,
-      },
     });
+
+    if (!dbUser) {
+      await prisma.user.create({
+        data: {
+          id: message.user,
+          name: profile.real_name,
+          displayName: userDisplayName,
+          image: userpfp,
+          team: messageTeam,
+        },
+      });
+    }
 
     let sendingMessage: ChatPostMessageRequest | null = null;
 
@@ -174,7 +178,6 @@ export async function mirror(
       // @ts-expect-error
       originMessage = await prisma.message.findFirst({
         where: {
-          // @ts-expect-error
           originTs: threadTs,
           originChannel: messageChannel,
         },
@@ -240,7 +243,6 @@ export async function mirror(
           unfurl_media: true,
         });
 
-        // @ts-expect-error
         let dbUser = await prisma.user.findFirst({
           where: {
             id: message.user,
@@ -248,7 +250,6 @@ export async function mirror(
         });
 
         if (!dbUser) {
-          // @ts-expect-error
           await prisma.user.create({
             data: {
               id: message.user,
@@ -262,7 +263,6 @@ export async function mirror(
 
         await prisma.message.create({
           data: {
-            // @ts-expect-error
             user: {
               connect: {
                 id: message.user,
@@ -293,7 +293,6 @@ export async function mirror(
 
         await prisma.message.create({
           data: {
-            // @ts-expect-error
             user: {
               connectOrCreate: {
                 where: { id: message.user },
@@ -386,7 +385,6 @@ export async function updateMessage(
 
     const dbMessage = await prisma.message.findFirst({
       where: {
-        // @ts-expect-error
         originChannel: messageChannel,
         originTs: message.message.ts,
       },
@@ -394,12 +392,10 @@ export async function updateMessage(
 
     await prisma.message.update({
       where: {
-        // @ts-expect-error
         originChannel: messageChannel,
         originTs: message.message.ts,
       },
       data: {
-        // @ts-expect-error
         updated: true,
       },
     });
@@ -407,7 +403,6 @@ export async function updateMessage(
     if (messageTeam === hcTeam) {
       await pbClient.chat.update({
         channel: channelMap[messageChannel],
-        // @ts-expect-error
         ts: dbMessage!.originTs,
         // @ts-expect-error
         text: message.message.text,
@@ -417,7 +412,6 @@ export async function updateMessage(
     } else if (messageTeam === pbTeam) {
       await hcClient.chat.update({
         channel: channelMap[messageChannel],
-        // @ts-expect-error
         ts: dbMessage!.originTs,
         // @ts-expect-error
         text: message.message.text,
@@ -479,7 +473,6 @@ export async function deleteMessage(
 
     const dbMessage = await prisma.message.findFirst({
       where: {
-        // @ts-expect-error
         originTs: message.previous_message.ts,
         originChannel: messageChannel,
       },
@@ -487,12 +480,10 @@ export async function deleteMessage(
 
     await prisma.message.update({
       where: {
-        // @ts-expect-error
         originTs: message.previous_message.ts,
         originChannel: messageChannel,
       },
       data: {
-        // @ts-expect-error
         deleted: true,
       },
     });
@@ -500,13 +491,11 @@ export async function deleteMessage(
     if (messageTeam === hcTeam) {
       await pbClient.chat.delete({
         channel: channelMap[messageChannel],
-        // @ts-expect-error
         ts: dbMessage!.originTs,
       });
     } else if (messageTeam === pbTeam) {
       await hcClient.chat.delete({
         channel: channelMap[messageChannel],
-        // @ts-expect-error
         ts: dbMessage!.originTs,
       });
     }
@@ -528,62 +517,38 @@ export async function messageReact(
       return;
     }
 
-    let dbMessage = await prisma.message.findFirst({
-      where: {
-        // @ts-expect-error
-        originTs: event.item.ts,
-        originChannel: event.item.channel,
-      },
-    });
-
-    // let dbReaction = await prisma.reaction.upsert({
-    //   where: {
-    //     // @ts-expect-error
-    //     id: dbMessage.id,
-    //     reaction: event.reaction,
-    //   },
-    //   create: {
-    //     // @ts-expect-error
-    //     id: dbMessage.id,
-    //     reaction: event.reaction,
-    //     count: 1,
-    //   },
-    //   update: {},
-    // });
-
-    // @ts-expect-error
-    await prisma.reaction.upsert({
-      where: {
-        // @ts-expect-error
-        messageId: dbMessage.id,
-      },
-      update: {
-        count: {
-          increment: 1,
-        },
-      },
-      create: {
-        // @ts-expect-error
-        id: dbMessage.id,
-        reaction: event.reaction,
-        count: 1,
-      },
-    });
-
-    // react to the message in the other channel
-    if (event.item.channel === pbTeam) {
-      await hcClient.reactions.add({
-        name: event.reaction,
-        channel: channelMap[event.item.channel],
-        timestamp: event.item.ts,
-      });
-    } else if (event.item.channel === hcTeam) {
-      await pbClient.reactions.add({
-        name: event.reaction,
-        channel: channelMap[event.item.channel],
-        timestamp: event.item.ts,
-      });
+    if (!hasChannel(event.item.channel)) {
+      return;
     }
+
+    if (!channelMap[event.item.channel]) {
+      return;
+    }
+
+    // get message from db
+    const dbMessage = await prisma.message.findFirst({
+      where: {
+        OR: [
+          {
+            originTs: event.item.ts,
+            originChannel: event.item.channel,
+          },
+          {
+            mirrorTs: event.item.ts,
+            mirrorChannel: event.item.channel,
+          },
+        ],
+      },
+    });
+
+    if (!dbMessage) {
+      console.log("Message not found in the database");
+      return;
+    }
+
+    console.log("DB Message: ", dbMessage);
+
+    blog(`Reaction received from team ${team}`, "info");
   } catch (error) {
     blog(`Error responding to reaction: ${error}`, "error");
   }
