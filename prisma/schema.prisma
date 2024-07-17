@@ -41,6 +41,17 @@ model Message {
   deleted       Boolean    @default(false) // if the message was deleted
   updated       Boolean    @default(false) // if the message was updated
   reactions     Reaction[]
+  threads       Thread[]
+  topThread     Thread?    @relation(fields: [threadId], references: [id])
+  threadId      String?
+}
+
+model Thread {
+  id         String    @id @unique @default(uuid())
+  ts         String    @unique
+  topMessage Message   @relation(fields: [messageId], references: [id])
+  messages   Message[]
+  messageId  String
 }
 
 model Reaction {
